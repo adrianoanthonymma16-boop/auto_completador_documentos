@@ -76,3 +76,10 @@ E-mail: adrianoanthonymma16@gmail.com
 ## Licença
 
 Software proprietário. Veja o arquivo LICENSE.txt para os termos completos.
+
+## 🚀 Instalação rápida (para desenvolvedores)
+
+Se você clonou o repositório fonte, execute o comando abaixo para instalar **todas as dependências automaticamente**:
+
+```bash
+bash install_dependencies.sh
