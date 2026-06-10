@@ -1,0 +1,86 @@
+================================================================================
+        MEU APP DE DOCUMENTOS — LICENÇA DE USO PROPRIETÁRIA
+                          Versão 3.4
+================================================================================
+
+Copyright © 2024. Todos os direitos reservados.
+
+LEIA COM ATENÇÃO ANTES DE INSTALAR OU USAR ESTE SOFTWARE.
+
+Ao instalar, copiar ou utilizar o "Meu App de Documentos" (doravante "Software"),
+você concorda com os termos e condições desta licença. Se não concordar, não
+instale nem utilize o Software.
+
+────────────────────────────────────────────────────────────────────────────────
+1. CONCESSÃO DE LICENÇA
+────────────────────────────────────────────────────────────────────────────────
+
+O autor concede ao comprador ("Usuário") uma licença pessoal, intransferível e
+não exclusiva para instalar e utilizar o Software em até 1 (um) computador de
+sua propriedade, exclusivamente para uso pessoal e não comercial.
+
+────────────────────────────────────────────────────────────────────────────────
+2. RESTRIÇÕES
+────────────────────────────────────────────────────────────────────────────────
+
+É expressamente proibido ao Usuário:
+
+  a) Copiar, redistribuir, revender ou sublicenciar o Software ou qualquer
+     parte dele, a título gratuito ou oneroso, sem autorização prévia e
+     escrita do autor;
+
+  b) Modificar, descompilar, fazer engenharia reversa ou criar obras
+     derivadas baseadas no Software;
+
+  c) Remover ou alterar avisos de direitos autorais, marcas ou outros
+     identificadores de propriedade presentes no Software;
+
+  d) Usar o Software em mais de um computador simultaneamente sem a
+     aquisição de licenças adicionais.
+
+────────────────────────────────────────────────────────────────────────────────
+3. PROPRIEDADE INTELECTUAL
+────────────────────────────────────────────────────────────────────────────────
+
+O Software, incluindo seu código-fonte, design, lógica, documentação e todos
+os seus componentes, é propriedade exclusiva do autor e está protegido pelas
+leis brasileiras de direito autoral (Lei nº 9.610/1998) e por tratados
+internacionais de propriedade intelectual.
+
+────────────────────────────────────────────────────────────────────────────────
+4. ISENÇÃO DE GARANTIAS
+────────────────────────────────────────────────────────────────────────────────
+
+O Software é fornecido "no estado em que se encontra" ("as is"), sem garantias
+de qualquer natureza, expressas ou implícitas, incluindo, mas não se limitando
+a, garantias de comercialização, adequação a uma finalidade específica ou
+não violação de direitos de terceiros.
+
+────────────────────────────────────────────────────────────────────────────────
+5. LIMITAÇÃO DE RESPONSABILIDADE
+────────────────────────────────────────────────────────────────────────────────
+
+Em nenhuma circunstância o autor será responsável por danos diretos, indiretos,
+incidentais, especiais ou consequenciais decorrentes do uso ou da impossibilidade
+de uso do Software, mesmo que tenha sido advertido da possibilidade de tais danos.
+
+────────────────────────────────────────────────────────────────────────────────
+6. RESCISÃO
+────────────────────────────────────────────────────────────────────────────────
+
+Esta licença é válida até ser rescindida. Ela será rescindida automaticamente,
+sem aviso prévio, caso o Usuário viole qualquer um dos seus termos. Mediante
+rescisão, o Usuário deverá destruir todas as cópias do Software em sua posse.
+
+────────────────────────────────────────────────────────────────────────────────
+7. FORO
+────────────────────────────────────────────────────────────────────────────────
+
+Fica eleito o foro da Comarca de Santarém, Estado do Pará, Brasil, para dirimir
+quaisquer controvérsias oriundas desta licença, com renúncia expressa a qualquer
+outro, por mais privilegiado que seja.
+
+================================================================================
+Ao clicar em "Aceitar e Continuar", você declara ter lido, compreendido e
+concordado integralmente com os termos desta licença.
+================================================================================
