@@ -91,3 +91,28 @@ def mostrar_aviso_sem_extração():
 
 def mostrar_sucesso_geracao(caminho):
     messagebox.showinfo("Sucesso", f"Documento gerado!\n{caminho}")
+
+
+def mostrar_info_modelos_salvos():
+    msg = """📁 BIBLIOTECA DE MODELOS
+
+Aqui ficam armazenados os modelos que você já usou.
+
+Ao salvar um modelo, ele fica disponível para uso futuro
+sem precisar selecionar o arquivo novamente.
+
+• Clique em "Usar este modelo" para carregá-lo como template atual
+• O modelo será preenchido com os placeholders encontrados
+• Você pode remover modelos que não usa mais
+
+─────────────────────────────
+Deseja continuar?"""
+    return messagebox.askyesno("Modelos Salvos", msg)
+
+
+def mostrar_modelo_salvo_sucesso(nome):
+    messagebox.showinfo("Salvo", f"Modelo '{nome}' salvo na biblioteca.\nAcesse na aba 'Modelos Salvos'.")
+
+
+def mostrar_modelo_ja_salvo(nome):
+    messagebox.showwarning("Já salvo", f"O modelo '{nome}' já está na biblioteca.")

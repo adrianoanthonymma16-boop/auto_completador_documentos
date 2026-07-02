@@ -2,7 +2,7 @@
 
 Automatize o preenchimento de documentos ODT/DOCX usando OCR.
 
-Carregue um modelo com placeholders ({{nome}}, {{cpf}}), anexe fotos/PDFs de documentos, desenhe retângulos nos campos e gere documentos prontos.
+Carregue um modelo com placeholders ({{nome}}, {{cpf}}), anexe fotos/PDFs de documentos, desenhe retângulos nos campos e gere documentos prontos. Salve modelos na biblioteca para reutilização rápida.
 
 Formatos: modelo (ODT/DOCX) | fontes (JPG, PNG, PDF, TIFF, HEIC, WEBP)
 Plataforma: Linux (Ubuntu/Debian)
@@ -17,7 +17,7 @@ Instale as dependências:
 sudo apt update
 sudo apt install -y python3 python3-pip python3-tk tesseract-ocr tesseract-ocr-por zenity makeself
 
-pip3 install Pillow opencv-python pytesseract pypdfium2 python-docx
+pip3 install Pillow opencv-python pytesseract pypdfium2 python-docx ttkbootstrap
 
 Opcional (HEIC do iPhone):
 sudo apt install -y libheif-dev
@@ -62,7 +62,25 @@ meu_app_documentos/
     ├── anexo_heic.py
     ├── modelo_odt.py
     ├── modelo_docx.py
+    ├── modelos_salvos.py
     └── interface.py
+
+---
+
+## 📋 Versões
+
+### v3.5 (atual)
+- Interface moderna com **ttkbootstrap** (tema Cosmo)
+- **Biblioteca de Modelos Salvos** — salve e reutilize templates sem selecionar o arquivo novamente
+- Nova aba "Modelos Salvos" com tabela interativa, carregamento e remoção
+- Janela maior (1280x820), componentes estilizados e melhor usabilidade
+- Novo módulo `src/modelos_salvos.py` para persistência dos modelos
+
+### v3.4 (branch [`v3.4-legacy`](https://github.com/adrianoanthonymma16-boop/auto_completador_documentos/tree/v3.4-legacy))
+- Interface tkinter tradicional
+- Fluxo: Modelo → Anexar e Mapear (OCR) → Gerar Documento
+- Suporte completo a ODT, DOCX, PDF, HEIC e imagens
+- Sem biblioteca de modelos salvos
 
 ---
 

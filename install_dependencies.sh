@@ -31,7 +31,7 @@ esac
 
 # Instala dependências Python
 echo "Instalando dependências Python..."
-pip3 install Pillow opencv-python pytesseract pypdfium2 python-docx
+pip3 install Pillow opencv-python pytesseract pypdfium2 python-docx ttkbootstrap
 
 echo "=========================================="
 echo "  Instalação concluída!"

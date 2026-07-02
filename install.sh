@@ -144,8 +144,8 @@ sudo pip3 install pytesseract --break-system-packages 2>/dev/null || true
 sleep 0.3
 
 echo "75"
-echo "# Instalando python-docx e pypdfium2..."
-sudo pip3 install python-docx pypdfium2 --break-system-packages 2>/dev/null || true
+echo "# Instalando python-docx, pypdfium2 e ttkbootstrap..."
+sudo pip3 install python-docx pypdfium2 ttkbootstrap --break-system-packages 2>/dev/null || true
 sleep 0.5
 
 echo "78"
