@@ -5,7 +5,7 @@
 # =============================================================================
 
 APP_NAME="Meu App de Documentos"
-APP_VERSION="3.4"
+APP_VERSION="3.6"
 APP_EXEC="meu-app-documentos"
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 LICENSE_FILE="$SCRIPT_DIR/LICENSE.txt"
