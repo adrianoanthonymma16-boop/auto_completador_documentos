@@ -1,7 +1,7 @@
 """
-Módulo principal da interface gráfica - VERSÃO COMPLETA
+Módulo principal da interface gráfica
 Gerencia as abas, desenho de retângulos e orquestra os outros módulos
-FLUXO: Modelo → Modelos Salvos → Anexar documentos → Mapear → Extrair → Editar → Gerar
+FLUXO: Modelo -> Modelos Salvos -> Anexar -> Mapear -> Extrair -> Editar -> Gerar
 """
 
 import tkinter as tk
@@ -10,8 +10,12 @@ import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 from PIL import Image, ImageTk
 import os
+import json
 
-from config import VERSAO
+from config import (
+    VERSAO, PASTA_APP, BACKUP_FILE, BACKUP_INTERVAL,
+    LIGHT_THEME, DARK_THEME
+)
 from validadores import (
     validar_extensao,
     obter_filetypes_modelo,
@@ -23,7 +27,6 @@ from mensagens import (
     mostrar_erro_formato,
     mostrar_aviso_sem_modelo,
     mostrar_sucesso_geracao,
-    mostrar_info_modelos_salvos,
     mostrar_modelo_salvo_sucesso,
     mostrar_modelo_ja_salvo
 )
@@ -33,6 +36,10 @@ from anexo_heic import heic_para_imagem, heic_suportado
 from modelo_odt import extrair_placeholders_odt, gerar_odt_preenchido
 from modelo_docx import extrair_placeholders_docx, gerar_docx_preenchido, docx_suportado
 from modelos_salvos import listar_modelos, salvar_modelo, remover_modelo, carregar_modelo
+from logger import log_info, log_erro, log_warning
+from preferencias import carregar_preferencias, set_preferencia
+from historico import adicionar_ao_historico, listar_historico
+from validadores_extra import sugerir_validacao, validar_campo
 
 
 class AppDocumentos:
@@ -40,32 +47,76 @@ class AppDocumentos:
         self.root = root
         self.root.title(f"Meu App de Documentos - v{VERSAO}")
         self.root.geometry("1280x820")
+        self.root.minsize(900, 600)
+
+        self.tema_atual = "cosmo"
+        self.cores = dict(LIGHT_THEME)
 
         self.modelo_path = None
         self.modelo_tipo = None
         self.placeholders = []
-
         self.documentos_anexados = []
-
         self.mapeamento = {}
-
         self.placeholder_atual = None
         self.documento_atual_path = None
         self.imagem_atual = None
         self.imagem_exibida = None
         self.imagem_exibida_img = None
-
         self.retangulo_atual = None
         self.inicio_x = None
         self.inicio_y = None
         self.retangulos_temp = []
-
         self.dados_extraidos = {}
-
         self.frame_salvar_modelo = None
         self.btn_salvar_modelo = None
 
+        self.zoom_level = 1.0
+        self.pan_start_x = 0
+        self.pan_start_y = 0
+        self.pan_offset_x = 0
+        self.pan_offset_y = 0
+        self.is_panning = False
+
+        self.undo_stack = []
+        self.redo_stack = []
+
+        self._criar_toolbar()
         self.criar_abas()
+        self._configurar_atalhos()
+        self._configurar_zoom_pan()
+        self._iniciar_backup()
+        self._restaurar_preferencias()
+        self.root.protocol("WM_DELETE_WINDOW", self._ao_fechar)
+
+        log_info(f"App iniciado v{VERSAO}")
+
+    # ============================================================
+    # TOOLBAR SUPERIOR
+    # ============================================================
+
+    def _criar_toolbar(self):
+        self.toolbar = ttk.Frame(self.root)
+        self.toolbar.pack(fill=tk.X, padx=8, pady=(8, 0))
+
+        ttk.Label(self.toolbar, text=f"v{VERSAO}",
+                  bootstyle="secondary", font=("Helvetica", 9)).pack(side=tk.LEFT, padx=5)
+
+        self.btn_modo_escuro = ttk.Button(
+            self.toolbar, text="🌙 Modo Escuro",
+            command=self._alternar_tema,
+            bootstyle="secondary-outline", padding=(10, 4)
+        )
+        self.btn_modo_escuro.pack(side=tk.RIGHT, padx=5)
+
+        ttk.Button(
+            self.toolbar, text="ℹ Sobre",
+            command=self._mostrar_sobre,
+            bootstyle="link", padding=(5, 4)
+        ).pack(side=tk.RIGHT, padx=5)
+
+    # ============================================================
+    # ABAS
+    # ============================================================
 
     def criar_abas(self):
         self.notebook = ttk.Notebook(self.root)
@@ -75,16 +126,140 @@ class AppDocumentos:
         self.aba_modelos_salvos = ttk.Frame(self.notebook)
         self.aba_anexos = ttk.Frame(self.notebook)
         self.aba_gerar = ttk.Frame(self.notebook)
+        self.aba_historico = ttk.Frame(self.notebook)
 
         self.notebook.add(self.aba_modelo, text="📄 Modelo")
         self.notebook.add(self.aba_modelos_salvos, text="📁 Modelos Salvos")
         self.notebook.add(self.aba_anexos, text="📎 Anexar e Mapear")
         self.notebook.add(self.aba_gerar, text="✨ Gerar Documento")
+        self.notebook.add(self.aba_historico, text="📋 Histórico")
 
         self.criar_aba_modelo()
         self.criar_aba_modelos_salvos()
         self.criar_aba_anexos()
         self.criar_aba_gerar()
+        self.criar_aba_historico()
+
+    # ============================================================
+    # ATALHOS DE TECLADO
+    # ============================================================
+
+    def _configurar_atalhos(self):
+        self.root.bind_all('<Control-o>', lambda e: self.carregar_modelo())
+        self.root.bind_all('<Control-O>', lambda e: self.carregar_modelo())
+        self.root.bind_all('<Control-a>', lambda e: self.anexar_documento())
+        self.root.bind_all('<Control-A>', lambda e: self.anexar_documento())
+        self.root.bind_all('<Control-g>', lambda e: self.gerar_documento_preenchido())
+        self.root.bind_all('<Control-G>', lambda e: self.gerar_documento_preenchido())
+        self.root.bind_all('<Control-s>', lambda e: self.salvar_mapeamento())
+        self.root.bind_all('<Control-S>', lambda e: self.salvar_mapeamento())
+        self.root.bind_all('<Control-z>', lambda e: self._desfazer_retangulo())
+        self.root.bind_all('<Control-Z>', lambda e: self._refazer_retangulo())
+        self.root.bind_all('<Control-d>', lambda e: self._alternar_tema())
+        self.root.bind_all('<Control-D>', lambda e: self._alternar_tema())
+        self.root.bind_all('<Control-e>', lambda e: self._exportar_mapeamento())
+        self.root.bind_all('<Control-E>', lambda e: self._exportar_mapeamento())
+        self.root.bind_all('<Control-i>', lambda e: self._importar_mapeamento())
+        self.root.bind_all('<Control-I>', lambda e: self._importar_mapeamento())
+        self.root.bind('<Delete>', lambda e: self._remover_retangulo_selecionado())
+
+    # ============================================================
+    # ZOOM E PAN
+    # ============================================================
+
+    def _configurar_zoom_pan(self):
+        pass
+
+    def _bind_zoom_canvas(self):
+        self.canvas.bind('<Control-Button-4>', lambda e: self._zoom(1.2))
+        self.canvas.bind('<Control-Button-5>', lambda e: self._zoom(0.8))
+        self.canvas.bind('<ButtonPress-2>', self._iniciar_pan)
+        self.canvas.bind('<B2-Motion>', self._mover_pan)
+        self.canvas.bind('<ButtonRelease-2>', self._finalizar_pan)
+
+    def _zoom(self, fator):
+        self.zoom_level *= fator
+        self.zoom_level = max(0.2, min(self.zoom_level, 5.0))
+        self._redesenhar_canvas_com_zoom()
+
+    def _redesenhar_canvas_com_zoom(self):
+        if not self.imagem_atual:
+            return
+        w = int(self.imagem_atual.width * self.zoom_level)
+        h = int(self.imagem_atual.height * self.zoom_level)
+        img = self.imagem_atual.resize((w, h), Image.Resampling.LANCZOS)
+        self.imagem_exibida_img = img
+        self.imagem_exibida = ImageTk.PhotoImage(img)
+        self.canvas.delete("all")
+        self.canvas.config(scrollregion=(0, 0, w, h))
+        self.canvas.create_image(self.pan_offset_x, self.pan_offset_y,
+                                 anchor=tk.NW, image=self.imagem_exibida)
+        self._redesenhar_retangulos_no_canvas()
+
+    def _iniciar_pan(self, event):
+        self.is_panning = True
+        self.pan_start_x = event.x
+        self.pan_start_y = event.y
+        self.canvas.config(cursor="fleur")
+
+    def _mover_pan(self, event):
+        if self.is_panning:
+            dx = event.x - self.pan_start_x
+            dy = event.y - self.pan_start_y
+            self.pan_offset_x += dx
+            self.pan_offset_y += dy
+            self.pan_start_x = event.x
+            self.pan_start_y = event.y
+            self.canvas.move("all", dx, dy)
+
+    def _finalizar_pan(self, event):
+        self.is_panning = False
+        self.canvas.config(cursor="")
+
+    # ============================================================
+    # TEMA (MODO ESCURO/CLARO)
+    # ============================================================
+
+    def _alternar_tema(self):
+        novo = "cyborg" if self.tema_atual == "cosmo" else "cosmo"
+        self.root.style.theme_use(novo)
+        self.tema_atual = novo
+        self.cores = dict(DARK_THEME if novo == "cyborg" else LIGHT_THEME)
+        self._aplicar_cores_widgets()
+        set_preferencia("tema", novo)
+        self.btn_modo_escuro.config(
+            text="☀ Modo Claro" if novo == "cyborg" else "🌙 Modo Escuro"
+        )
+        log_info(f"Tema alterado para: {novo}")
+
+    def _aplicar_cores_widgets(self):
+        c = self.cores
+        for w in self._widgets_com_cores():
+            try:
+                w.configure(bg=c['listbox_bg'], fg=c['listbox_fg'],
+                            selectbackground=c['select_bg'],
+                            selectforeground=c['select_fg'])
+            except Exception:
+                pass
+
+        try:
+            self.canvas.configure(bg=c['canvas_bg'])
+            self.canvas_historico.configure(bg=c['canvas_bg'])
+        except Exception:
+            pass
+
+        try:
+            self.text_preview.configure(bg=c['text_bg'], fg=c['text_fg'])
+        except Exception:
+            pass
+
+    def _widgets_com_cores(self):
+        widgets = []
+        for attr in ['lista_placeholders', 'lista_placeholders_aba2',
+                     'lista_documentos', 'lista_mapeamentos']:
+            if hasattr(self, attr) and getattr(self, attr) is not None:
+                widgets.append(getattr(self, attr))
+        return widgets
 
     # ============================================================
     # ABA 1 - MODELO
@@ -101,8 +276,8 @@ class AppDocumentos:
 
         texto_info = (
             "1. Selecione um documento ODT ou DOCX que contenha placeholders no formato {{nome_campo}}\n"
-            "2. O app encontrará automaticamente todos os campos a preencher\n"
-            "3. Você poderá salvar o modelo na biblioteca para reutilizar depois\n"
+            "2. O app encontrara automaticamente todos os campos a preencher\n"
+            "3. Voce podera salvar o modelo na biblioteca para reutilizar depois\n"
             "4. Em seguida, anexe documentos-fonte e mapeie cada placeholder"
         )
         ttk.Label(frame_info, text=texto_info, font=("Helvetica", 10),
@@ -118,7 +293,7 @@ class AppDocumentos:
         ttk.Label(frame_formatos, text=texto_fmt, font=("Helvetica", 10),
                   wraplength=1150).pack(anchor=tk.W)
 
-        btn_carregar = ttk.Button(frame, text="📁 Carregar Modelo",
+        btn_carregar = ttk.Button(frame, text="📁 Carregar Modelo  [Ctrl+O]",
                                   command=self.carregar_modelo,
                                   bootstyle="success", padding=(30, 12))
         btn_carregar.pack(pady=10)
@@ -128,9 +303,10 @@ class AppDocumentos:
 
         self.lista_placeholders = tk.Listbox(self.frame_placeholders, height=8,
                                               font=("Helvetica", 11),
-                                              bg="#ffffff", fg="#333333",
-                                              selectbackground="#0078D4",
-                                              selectforeground="#ffffff",
+                                              bg=self.cores['listbox_bg'],
+                                              fg=self.cores['listbox_fg'],
+                                              selectbackground=self.cores['select_bg'],
+                                              selectforeground=self.cores['select_fg'],
                                               relief="flat", borderwidth=1,
                                               highlightthickness=1,
                                               highlightcolor="#0078D4")
@@ -158,12 +334,18 @@ class AppDocumentos:
         if not mostrar_info_modelos():
             return
 
+        prefs = carregar_preferencias()
+        dir_inicial = prefs.get('ultimo_diretorio_modelo', os.path.expanduser("~"))
+
         caminho = filedialog.askopenfilename(
             title="Selecione o modelo (ODT ou DOCX)",
-            filetypes=obter_filetypes_modelo()
+            filetypes=obter_filetypes_modelo(),
+            initialdir=dir_inicial
         )
         if not caminho:
             return
+
+        set_preferencia('ultimo_diretorio_modelo', os.path.dirname(caminho))
 
         valido, ext, msg = validar_extensao(caminho, 'modelo')
         if not valido:
@@ -178,7 +360,7 @@ class AppDocumentos:
                 self.modelo_tipo = 'odt'
             elif ext == '.docx':
                 if not docx_suportado():
-                    messagebox.showerror("Erro", "Suporte a DOCX não disponível")
+                    messagebox.showerror("Erro", "Suporte a DOCX nao disponivel")
                     return
                 placeholders = extrair_placeholders_docx(caminho)
                 self.modelo_tipo = 'docx'
@@ -203,11 +385,14 @@ class AppDocumentos:
                     self.frame_salvar_modelo.pack(fill=tk.X, padx=25, pady=5,
                                                    before=self.status_modelo)
 
+                log_info(f"Modelo carregado: {caminho} ({len(self.placeholders)} placeholders)")
                 self.notebook.select(self.aba_anexos)
             else:
                 messagebox.showwarning("Aviso", "Nenhum placeholder {{...}} encontrado.")
+                log_warning("Nenhum placeholder encontrado no modelo")
 
         except Exception as e:
+            log_erro(f"Erro ao carregar modelo: {str(e)}")
             messagebox.showerror("Erro", f"Falha: {str(e)}")
 
     def salvar_modelo_atual(self):
@@ -221,6 +406,7 @@ class AppDocumentos:
         if sucesso:
             mostrar_modelo_salvo_sucesso(nome)
             self.atualizar_lista_modelos_salvos()
+            log_info(f"Modelo salvo na biblioteca: {nome}")
         else:
             mostrar_modelo_ja_salvo(nome)
 
@@ -238,8 +424,8 @@ class AppDocumentos:
         frame_info.pack(fill=tk.X, padx=25, pady=(5, 15))
 
         texto_info = (
-            "Os modelos salvos aqui ficam disponíveis para uso futuro sem precisar selecionar o arquivo novamente.\n"
-            "Selecione um modelo na tabela e clique em 'Usar este modelo' para carregá-lo como template atual."
+            "Os modelos salvos aqui ficam disponiveis para uso futuro sem precisar selecionar o arquivo novamente.\n"
+            "Selecione um modelo na tabela e clique em 'Usar este modelo' para carrega-lo como template atual."
         )
         ttk.Label(frame_info, text=texto_info, font=("Helvetica", 10),
                   wraplength=1150).pack(anchor=tk.W)
@@ -251,7 +437,7 @@ class AppDocumentos:
                    command=self.usar_modelo_salvo,
                    bootstyle="success", padding=(15, 8)).pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(frame_botoes, text="🗑️ Remover",
+        ttk.Button(frame_botoes, text="🗑 Remover",
                    command=self.remover_modelo_salvo,
                    bootstyle="danger-outline", padding=(15, 8)).pack(side=tk.LEFT, padx=5)
 
@@ -271,7 +457,7 @@ class AppDocumentos:
         self.tabela_modelos.heading("nome", text="Nome do Modelo")
         self.tabela_modelos.heading("tipo_ext", text="Tipo")
         self.tabela_modelos.heading("num_campos", text="Campos")
-        self.tabela_modelos.heading("data", text="Data de Adição")
+        self.tabela_modelos.heading("data", text="Data de Adicao")
 
         self.tabela_modelos.column("nome", width=400, minwidth=200)
         self.tabela_modelos.column("tipo_ext", width=80, minwidth=60, anchor=tk.CENTER)
@@ -333,7 +519,7 @@ class AppDocumentos:
         caminho, tipo, placeholders = carregar_modelo(modelo_id)
 
         if caminho is None:
-            messagebox.showerror("Erro", "Arquivo do modelo não encontrado.")
+            messagebox.showerror("Erro", "Arquivo do modelo nao encontrado.")
             self.atualizar_lista_modelos_salvos()
             return
 
@@ -357,6 +543,7 @@ class AppDocumentos:
             self.frame_salvar_modelo.pack(fill=tk.X, padx=25, pady=5,
                                            before=self.status_modelo)
 
+        log_info(f"Modelo carregado da biblioteca: {nome_modelo}")
         self.notebook.select(self.aba_anexos)
 
     def remover_modelo_salvo(self):
@@ -376,6 +563,7 @@ class AppDocumentos:
         if sucesso:
             self.atualizar_lista_modelos_salvos()
             messagebox.showinfo("Removido", f"Modelo '{nome_modelo}' removido da biblioteca.")
+            log_info(f"Modelo removido da biblioteca: {nome_modelo}")
         else:
             messagebox.showerror("Erro", mensagem)
 
@@ -389,19 +577,37 @@ class AppDocumentos:
         frame_top = ttk.Frame(frame)
         frame_top.pack(pady=8, fill=tk.X, padx=10)
 
-        ttk.Button(frame_top, text="📷 Anexar Documento",
+        btn_frame_left = ttk.Frame(frame_top)
+        btn_frame_left.pack(side=tk.LEFT)
+
+        ttk.Button(btn_frame_left, text="📷 Anexar Documento  [Ctrl+A]",
                    command=self.anexar_documento,
                    bootstyle="success", padding=(15, 8)).pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(frame_top, text="🗑️ Limpar Mapeamento",
+        ttk.Button(btn_frame_left, text="🗑 Limpar Mapeamento",
                    command=self.limpar_mapeamento,
                    bootstyle="warning", padding=(15, 8)).pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(frame_top, text="❌ Remover Documento",
+        ttk.Button(btn_frame_left, text="❌ Remover Documento  [Del]",
                    command=self.remover_documento,
                    bootstyle="danger", padding=(15, 8)).pack(side=tk.LEFT, padx=5)
 
-        instr_texto = "1. Clique no placeholder   |   2. Clique no documento   |   3. Desenhe o retângulo   |   4. Salvar Mapeamento"
+        btn_frame_right = ttk.Frame(frame_top)
+        btn_frame_right.pack(side=tk.RIGHT)
+
+        ttk.Button(btn_frame_right, text="📤 Exportar  [Ctrl+E]",
+                   command=self._exportar_mapeamento,
+                   bootstyle="info-outline", padding=(10, 8)).pack(side=tk.LEFT, padx=3)
+
+        ttk.Button(btn_frame_right, text="📥 Importar  [Ctrl+I]",
+                   command=self._importar_mapeamento,
+                   bootstyle="info-outline", padding=(10, 8)).pack(side=tk.LEFT, padx=3)
+
+        ttk.Button(btn_frame_right, text="↩ Desfazer  [Ctrl+Z]",
+                   command=self._desfazer_retangulo,
+                   bootstyle="secondary-outline", padding=(10, 8)).pack(side=tk.LEFT, padx=3)
+
+        instr_texto = "1. Clique no placeholder   |   2. Clique no documento   |   3. Desenhe o retangulo   |   4. Salvar Mapeamento  [Ctrl+S]"
         ttk.Label(frame, text=instr_texto,
                   bootstyle="danger", font=("Helvetica", 10, "bold"),
                   padding=(10, 6)).pack(fill=tk.X, padx=15)
@@ -414,9 +620,10 @@ class AppDocumentos:
 
         self.lista_placeholders_aba2 = tk.Listbox(frame_ph, height=10,
                                                    font=("Helvetica", 11),
-                                                   bg="#ffffff", fg="#333333",
-                                                   selectbackground="#0078D4",
-                                                   selectforeground="#ffffff",
+                                                   bg=self.cores['listbox_bg'],
+                                                   fg=self.cores['listbox_fg'],
+                                                   selectbackground=self.cores['select_bg'],
+                                                   selectforeground=self.cores['select_fg'],
                                                    relief="flat", borderwidth=1,
                                                    highlightthickness=1,
                                                    highlightcolor="#0078D4")
@@ -433,9 +640,10 @@ class AppDocumentos:
 
         self.lista_documentos = tk.Listbox(frame_doc, height=10,
                                             font=("Helvetica", 11),
-                                            bg="#ffffff", fg="#333333",
-                                            selectbackground="#0078D4",
-                                            selectforeground="#ffffff",
+                                            bg=self.cores['listbox_bg'],
+                                            fg=self.cores['listbox_fg'],
+                                            selectbackground=self.cores['select_bg'],
+                                            selectforeground=self.cores['select_fg'],
                                             relief="flat", borderwidth=1,
                                             highlightthickness=1,
                                             highlightcolor="#0078D4")
@@ -462,10 +670,16 @@ class AppDocumentos:
                                                padding=(10, 3))
         self.status_documento_sel.pack(side=tk.RIGHT, padx=5)
 
+        self.label_zoom = ttk.Label(frame_status,
+                                     text="Zoom: 100%  (Ctrl+Scroll)",
+                                     bootstyle="secondary",
+                                     padding=(10, 3))
+        self.label_zoom.pack(side=tk.RIGHT, padx=5)
+
         frame_img = ttk.Frame(frame)
         frame_img.pack(fill=tk.BOTH, expand=True, padx=15, pady=5)
 
-        self.canvas = tk.Canvas(frame_img, bg='#F0F0F0',
+        self.canvas = tk.Canvas(frame_img, bg=self.cores['canvas_bg'],
                                  relief="flat", borderwidth=0,
                                  highlightthickness=1,
                                  highlightbackground="#CCCCCC")
@@ -480,7 +694,9 @@ class AppDocumentos:
         self.canvas.bind("<B1-Motion>", self.desenhar_retangulo)
         self.canvas.bind("<ButtonRelease-1>", self.finalizar_retangulo)
 
-        ttk.Button(frame, text="💾 SALVAR MAPEAMENTO",
+        self._bind_zoom_canvas()
+
+        ttk.Button(frame, text="💾 SALVAR MAPEAMENTO  [Ctrl+S]",
                    command=self.salvar_mapeamento,
                    bootstyle="primary", padding=(30, 10)).pack(pady=5)
 
@@ -489,7 +705,8 @@ class AppDocumentos:
 
         self.lista_mapeamentos = tk.Listbox(self.frame_mapeamentos, height=5,
                                              font=("Helvetica", 10),
-                                             bg="#ffffff", fg="#333333",
+                                             bg=self.cores['listbox_bg'],
+                                             fg=self.cores['listbox_fg'],
                                              relief="flat", borderwidth=1)
         self.lista_mapeamentos.pack(fill=tk.BOTH, expand=True)
 
@@ -543,26 +760,20 @@ class AppDocumentos:
         if not self.imagem_atual:
             return
 
-        largura, altura = self.imagem_atual.size
-        nova_largura = min(800, largura)
-        nova_altura = int(altura * (nova_largura / largura))
-        self.imagem_exibida_img = self.imagem_atual.resize(
-            (nova_largura, nova_altura), Image.Resampling.LANCZOS
-        )
-        self.imagem_exibida = ImageTk.PhotoImage(self.imagem_exibida_img)
+        self.zoom_level = 1.0
+        self.pan_offset_x = 0
+        self.pan_offset_y = 0
+        self._redesenhar_canvas_com_zoom()
 
-        self.canvas.delete("all")
-        self.canvas.config(scrollregion=(0, 0, nova_largura, nova_altura))
-        self.canvas.create_image(0, 0, anchor=tk.NW, image=self.imagem_exibida)
-
+    def _redesenhar_retangulos_no_canvas(self):
         for ph, dados in self.mapeamento.items():
             if dados['documento_path'] == self.documento_atual_path:
                 escala_x = self.imagem_exibida_img.width / self.imagem_atual.width
                 escala_y = self.imagem_exibida_img.height / self.imagem_atual.height
-                x1 = dados['x1'] * escala_x
-                y1 = dados['y1'] * escala_y
-                x2 = dados['x2'] * escala_x
-                y2 = dados['y2'] * escala_y
+                x1 = dados['x1'] * escala_x + self.pan_offset_x
+                y1 = dados['y1'] * escala_y + self.pan_offset_y
+                x2 = dados['x2'] * escala_x + self.pan_offset_x
+                y2 = dados['y2'] * escala_y + self.pan_offset_y
                 self.canvas.create_rectangle(x1, y1, x2, y2, outline='#28a745', width=2)
                 self.canvas.create_text(x1, y1-5, text=ph, fill='#28a745',
                                          anchor=tk.W, font=("Helvetica", 10, "bold"))
@@ -575,9 +786,17 @@ class AppDocumentos:
         if not mostrar_info_anexos(heic_suportado()):
             return
 
-        caminho = filedialog.askopenfilename(filetypes=obter_filetypes_anexo())
+        prefs = carregar_preferencias()
+        dir_inicial = prefs.get('ultimo_diretorio_anexo', os.path.expanduser("~"))
+
+        caminho = filedialog.askopenfilename(
+            filetypes=obter_filetypes_anexo(),
+            initialdir=dir_inicial
+        )
         if not caminho:
             return
+
+        set_preferencia('ultimo_diretorio_anexo', os.path.dirname(caminho))
 
         valido, ext, msg = validar_extensao(caminho, 'anexo')
         if not valido:
@@ -604,8 +823,10 @@ class AppDocumentos:
 
             self.atualizar_lista_documentos()
             self.status_anexos.config(text=f"Anexado: {os.path.basename(caminho)}")
+            log_info(f"Documento anexado: {caminho}")
 
         except Exception as e:
+            log_erro(f"Erro ao anexar documento: {str(e)}")
             messagebox.showerror("Erro", str(e))
 
     def remover_documento(self):
@@ -666,14 +887,14 @@ class AppDocumentos:
                 self.retangulos_temp = [{
                     'placeholder': self.placeholder_atual,
                     'documento_path': self.documento_atual_path,
-                    'x1': int(x1 * escala_x),
-                    'y1': int(y1 * escala_y),
-                    'x2': int(x2 * escala_x),
-                    'y2': int(y2 * escala_y)
+                    'x1': int((x1 - self.pan_offset_x) * escala_x),
+                    'y1': int((y1 - self.pan_offset_y) * escala_y),
+                    'x2': int((x2 - self.pan_offset_x) * escala_x),
+                    'y2': int((y2 - self.pan_offset_y) * escala_y)
                 }]
 
                 self.canvas.itemconfig(self.retangulo_atual, outline='#0078D4', width=2)
-                self.status_anexos.config(text=f"Retângulo para '{self.placeholder_atual}'. Clique em SALVAR.")
+                self.status_anexos.config(text=f"Retangulo para '{self.placeholder_atual}'. Clique em SALVAR.  [Ctrl+S]")
             else:
                 self.canvas.delete(self.retangulo_atual)
 
@@ -681,10 +902,23 @@ class AppDocumentos:
 
     def salvar_mapeamento(self):
         if not hasattr(self, 'retangulos_temp') or not self.retangulos_temp:
-            messagebox.showwarning("Aviso", "Desenhe um retângulo primeiro!")
+            messagebox.showwarning("Aviso", "Desenhe um retangulo primeiro!")
             return
 
         for ret in self.retangulos_temp:
+            if ret['placeholder'] in self.mapeamento:
+                self.undo_stack.append({
+                    'action': 'update',
+                    'placeholder': ret['placeholder'],
+                    'old_data': dict(self.mapeamento[ret['placeholder']])
+                })
+            else:
+                self.undo_stack.append({
+                    'action': 'add',
+                    'placeholder': ret['placeholder']
+                })
+            self.redo_stack.clear()
+
             self.mapeamento[ret['placeholder']] = {
                 'documento_path': ret['documento_path'],
                 'documento_tipo': self.documento_tipo,
@@ -716,11 +950,175 @@ class AppDocumentos:
     def limpar_mapeamento(self):
         if messagebox.askyesno("Confirmar", "Limpar todo o mapeamento?"):
             self.mapeamento = {}
+            self.undo_stack.clear()
+            self.redo_stack.clear()
             self.atualizar_lista_placeholders_aba2()
             self.atualizar_lista_mapeamentos()
             if self.documento_atual_path:
                 self.carregar_imagem_para_mapeamento()
             self.status_anexos.config(text="Mapeamento limpo")
+
+    # ============================================================
+    # UNDO / REDO
+    # ============================================================
+
+    def _desfazer_retangulo(self):
+        if not self.undo_stack:
+            messagebox.showinfo("Undo", "Nada para desfazer.")
+            return
+
+        action = self.undo_stack.pop()
+        ph = action['placeholder']
+
+        if action['action'] == 'add':
+            self.redo_stack.append({
+                'action': 'remove',
+                'placeholder': ph,
+                'old_data': dict(self.mapeamento.get(ph, {}))
+            })
+            if ph in self.mapeamento:
+                del self.mapeamento[ph]
+        elif action['action'] == 'update':
+            self.redo_stack.append({
+                'action': 'update',
+                'placeholder': ph,
+                'old_data': dict(self.mapeamento.get(ph, {}))
+            })
+            self.mapeamento[ph] = action['old_data']
+
+        self.atualizar_lista_placeholders_aba2()
+        self.atualizar_lista_mapeamentos()
+        if self.documento_atual_path:
+            self.carregar_imagem_para_mapeamento()
+        self.status_anexos.config(text=f"Desfeito: {ph}")
+
+    def _refazer_retangulo(self):
+        if not self.redo_stack:
+            messagebox.showinfo("Redo", "Nada para refazer.")
+            return
+
+        action = self.redo_stack.pop()
+        ph = action['placeholder']
+
+        if action['action'] == 'remove':
+            self.undo_stack.append({
+                'action': 'add',
+                'placeholder': ph
+            })
+            if ph in self.mapeamento:
+                del self.mapeamento[ph]
+        elif action['action'] == 'update':
+            self.undo_stack.append({
+                'action': 'update',
+                'placeholder': ph,
+                'old_data': dict(self.mapeamento.get(ph, {}))
+            })
+            self.mapeamento[ph] = action['old_data']
+
+        self.atualizar_lista_placeholders_aba2()
+        self.atualizar_lista_mapeamentos()
+        if self.documento_atual_path:
+            self.carregar_imagem_para_mapeamento()
+        self.status_anexos.config(text=f"Refeito: {ph}")
+
+    def _remover_retangulo_selecionado(self):
+        if self.placeholder_atual and self.placeholder_atual in self.mapeamento:
+            self.undo_stack.append({
+                'action': 'add',
+                'placeholder': self.placeholder_atual,
+                'old_data': dict(self.mapeamento[self.placeholder_atual])
+            })
+            self.redo_stack.clear()
+            del self.mapeamento[self.placeholder_atual]
+            self.atualizar_lista_placeholders_aba2()
+            self.atualizar_lista_mapeamentos()
+            if self.documento_atual_path:
+                self.carregar_imagem_para_mapeamento()
+            self.status_anexos.config(text=f"Retangulo removido: {self.placeholder_atual}")
+
+    # ============================================================
+    # EXPORTAR / IMPORTAR MAPEAMENTO
+    # ============================================================
+
+    def _exportar_mapeamento(self):
+        if not self.mapeamento:
+            messagebox.showwarning("Aviso", "Nenhum mapeamento para exportar.")
+            return
+
+        caminho = filedialog.asksaveasfilename(
+            title="Exportar Mapeamento",
+            defaultextension=".json",
+            filetypes=[("JSON", "*.json")],
+            initialfile="mapeamento.json"
+        )
+        if not caminho:
+            return
+
+        export = {
+            'modelo_path': self.modelo_path,
+            'modelo_tipo': self.modelo_tipo,
+            'placeholders': self.placeholders,
+            'mapeamento': {}
+        }
+        for ph, dados in self.mapeamento.items():
+            export['mapeamento'][ph] = {
+                'documento_path': dados['documento_path'],
+                'documento_tipo': dados['documento_tipo'],
+                'x1': dados['x1'],
+                'y1': dados['y1'],
+                'x2': dados['x2'],
+                'y2': dados['y2']
+            }
+
+        try:
+            with open(caminho, 'w', encoding='utf-8') as f:
+                json.dump(export, f, indent=2, ensure_ascii=False)
+            messagebox.showinfo("Exportado", f"Mapeamento salvo em:\n{caminho}")
+            log_info(f"Mapeamento exportado: {caminho}")
+        except Exception as e:
+            log_erro(f"Erro ao exportar mapeamento: {str(e)}")
+            messagebox.showerror("Erro", str(e))
+
+    def _importar_mapeamento(self):
+        caminho = filedialog.askopenfilename(
+            title="Importar Mapeamento",
+            filetypes=[("JSON", "*.json")]
+        )
+        if not caminho:
+            return
+
+        try:
+            with open(caminho, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+
+            if data.get('modelo_path') != self.modelo_path:
+                if not messagebox.askyesno("Modelo diferente",
+                                           "O mapeamento foi criado com outro modelo. Continuar?"):
+                    return
+
+            self.mapeamento = {}
+            for ph, dados in data.get('mapeamento', {}).items():
+                self.mapeamento[ph] = {
+                    'documento_path': dados['documento_path'],
+                    'documento_tipo': dados['documento_tipo'],
+                    'x1': dados['x1'],
+                    'y1': dados['y1'],
+                    'x2': dados['x2'],
+                    'y2': dados['y2']
+                }
+
+            self.undo_stack.clear()
+            self.redo_stack.clear()
+            self.atualizar_lista_placeholders_aba2()
+            self.atualizar_lista_mapeamentos()
+            if self.documento_atual_path:
+                self.carregar_imagem_para_mapeamento()
+
+            messagebox.showinfo("Importado", f"Mapeamento carregado ({len(self.mapeamento)} campos)")
+            log_info(f"Mapeamento importado: {caminho}")
+        except Exception as e:
+            log_erro(f"Erro ao importar mapeamento: {str(e)}")
+            messagebox.showerror("Erro", f"Arquivo invalido: {str(e)}")
 
     # ============================================================
     # ABA 4 - GERAR DOCUMENTO
@@ -735,12 +1133,13 @@ class AppDocumentos:
         ttk.Label(frame, text="Extraia dados via OCR, revise e gere o documento preenchido",
                   bootstyle="secondary", font=("Helvetica", 10)).pack(pady=(0, 10))
 
-        self.frame_preview = ttk.LabelFrame(frame, text=" Dados Extraídos ")
+        self.frame_preview = ttk.LabelFrame(frame, text=" Dados Extraidos ")
         self.frame_preview.pack(fill=tk.BOTH, expand=True, padx=25, pady=10)
 
         self.text_preview = tk.Text(self.frame_preview, height=15,
                                      font=("Helvetica", 11),
-                                     bg="#ffffff", fg="#333333",
+                                     bg=self.cores['text_bg'],
+                                     fg=self.cores['text_fg'],
                                      relief="flat", borderwidth=1,
                                      highlightthickness=1,
                                      highlightcolor="#0078D4")
@@ -753,11 +1152,15 @@ class AppDocumentos:
                    command=self.extrair_e_editar_dados,
                    bootstyle="primary", padding=(25, 12)).pack(side=tk.LEFT, padx=10)
 
-        ttk.Button(frame_botoes_gerar, text="📄 Gerar Documento Preenchido",
+        ttk.Button(frame_botoes_gerar, text="📄 Gerar Documento Preenchido  [Ctrl+G]",
                    command=self.gerar_documento_preenchido,
                    bootstyle="success", padding=(25, 12)).pack(side=tk.LEFT, padx=10)
 
-        self.status_gerar = ttk.Label(frame, text="Aguardando extração de dados...",
+        ttk.Button(frame_botoes_gerar, text="📚 Gerar em Lote",
+                   command=self._processar_em_lote,
+                   bootstyle="warning", padding=(25, 12)).pack(side=tk.LEFT, padx=10)
+
+        self.status_gerar = ttk.Label(frame, text="Aguardando extracao de dados...",
                                        bootstyle="secondary", anchor=tk.W,
                                        padding=(10, 5))
         self.status_gerar.pack(side=tk.BOTTOM, fill=tk.X)
@@ -769,7 +1172,7 @@ class AppDocumentos:
 
         pendentes = [ph for ph in self.placeholders if ph not in self.mapeamento]
         if pendentes:
-            msg = f"Placeholders não mapeados:\n{', '.join(pendentes)}\n\nContinuar? (ficarão vazios)"
+            msg = f"Placeholders nao mapeados:\n{', '.join(pendentes)}\n\nContinuar? (ficarao vazios)"
             if not messagebox.askyesno("Aviso", msg):
                 self.notebook.select(self.aba_anexos)
                 return
@@ -794,19 +1197,20 @@ class AppDocumentos:
                 dados_temp[placeholder] = ""
 
         self.abrir_janela_edicao(dados_temp)
+        log_info("Extracao de dados iniciada")
 
     def abrir_janela_edicao(self, dados_temp):
         self.janela_edicao = tk.Toplevel(self.root)
-        self.janela_edicao.title("Editar Dados Extraídos")
+        self.janela_edicao.title("Editar Dados Extraidos")
         self.janela_edicao.geometry("700x600")
         self.janela_edicao.transient(self.root)
         self.janela_edicao.grab_set()
 
-        ttk.Label(self.janela_edicao, text="Revise e corrija os dados extraídos pelo OCR",
+        ttk.Label(self.janela_edicao, text="Revise e corrija os dados extraidos pelo OCR",
                   font=("Helvetica", 13, "bold")).pack(pady=(15, 5))
 
         ttk.Label(self.janela_edicao,
-                  text="As correções serão aplicadas em todas as ocorrências do placeholder no documento",
+                  text="As correcoes serao aplicadas em todas as ocorrencias do placeholder no documento",
                   bootstyle="info", padding=(10, 5)).pack()
 
         frame_campos = ttk.Frame(self.janela_edicao)
@@ -829,6 +1233,7 @@ class AppDocumentos:
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         self.campos_entrada = {}
+        self.labels_validacao = {}
 
         for placeholder, valor in dados_temp.items():
             frame_campo = ttk.LabelFrame(scrollable_frame, text=placeholder)
@@ -836,14 +1241,22 @@ class AppDocumentos:
 
             entry = tk.Text(frame_campo, height=3,
                              font=("Helvetica", 11),
-                             bg="#ffffff", fg="#333333",
+                             bg=self.cores['text_bg'],
+                             fg=self.cores['text_fg'],
                              relief="flat", borderwidth=1,
                              highlightthickness=1,
                              highlightcolor="#0078D4")
             entry.insert(tk.END, valor)
-            entry.pack(fill=tk.X, padx=5, pady=5)
+            entry.pack(fill=tk.X, padx=5, pady=(5, 0))
 
             self.campos_entrada[placeholder] = entry
+
+            tipo = sugerir_validacao(placeholder.lower())
+            if tipo:
+                label_val = ttk.Label(frame_campo, text=f"🔍 Validacao: {tipo}",
+                                      bootstyle="secondary", font=("Helvetica", 9))
+                label_val.pack(anchor=tk.W, padx=5, pady=(0, 5))
+                self.labels_validacao[placeholder] = label_val
 
         frame_botoes_edicao = ttk.Frame(self.janela_edicao)
         frame_botoes_edicao.pack(pady=15)
@@ -858,10 +1271,23 @@ class AppDocumentos:
 
     def salvar_dados_editados(self):
         self.dados_extraidos = {}
+        erros = []
 
         for placeholder, entry in self.campos_entrada.items():
             texto = entry.get("1.0", tk.END).strip()
-            self.dados_extraidos[placeholder] = texto if texto else ""
+            valor = texto if texto else ""
+            self.dados_extraidos[placeholder] = valor
+
+            if valor:
+                ok, msg = validar_campo(placeholder, valor)
+                if not ok:
+                    erros.append(f"{placeholder}: {msg}")
+
+        if erros:
+            msg = "Alguns campos tem dados invalidos:\n\n" + "\n".join(erros)
+            msg += "\n\nDeseja corrigir antes de continuar?"
+            if messagebox.askyesno("Validacao", msg):
+                return
 
         self.janela_edicao.destroy()
 
@@ -869,8 +1295,9 @@ class AppDocumentos:
         for placeholder, valor in self.dados_extraidos.items():
             self.text_preview.insert(tk.END, f"📌 {placeholder}:\n   {valor}\n\n")
 
-        self.status_gerar.config(text="Dados editados! Clique em 'Gerar Documento Preenchido'")
+        self.status_gerar.config(text="Dados editados! Clique em 'Gerar Documento Preenchido'  [Ctrl+G]")
         self.notebook.select(self.aba_gerar)
+        log_info("Dados extraidos e editados")
 
     def gerar_documento_preenchido(self):
         if not self.dados_extraidos:
@@ -881,29 +1308,289 @@ class AppDocumentos:
             mostrar_aviso_sem_modelo()
             return
 
+        prefs = carregar_preferencias()
+        dir_inicial = prefs.get('ultimo_diretorio_saida', os.path.expanduser("~"))
+
         ext_saida = ".odt" if self.modelo_tipo == 'odt' else ".docx"
         save_path = filedialog.asksaveasfilename(
             defaultextension=ext_saida,
             filetypes=[(ext_saida.upper().replace('.', ''), f"*{ext_saida}")],
-            initialfile=f"documento_preenchido{ext_saida}"
+            initialfile=f"documento_preenchido{ext_saida}",
+            initialdir=dir_inicial
         )
 
         if not save_path:
             return
+
+        set_preferencia('ultimo_diretorio_saida', os.path.dirname(save_path))
 
         try:
             if self.modelo_tipo == 'odt':
                 gerar_odt_preenchido(self.modelo_path, self.dados_extraidos, save_path)
             else:
                 if not docx_suportado():
-                    raise Exception("DOCX não suportado")
+                    raise Exception("DOCX nao suportado")
                 gerar_docx_preenchido(self.modelo_path, self.dados_extraidos, save_path)
 
             mostrar_sucesso_geracao(save_path)
             self.status_gerar.config(text=f"Documento salvo: {os.path.basename(save_path)}")
+            adicionar_ao_historico(self.modelo_path, self.modelo_tipo,
+                                   save_path, len(self.dados_extraidos))
+            self.atualizar_tabela_historico()
+            log_info(f"Documento gerado: {save_path}")
 
         except Exception as e:
+            log_erro(f"Erro ao gerar documento: {str(e)}")
             messagebox.showerror("Erro", str(e))
+
+    def _processar_em_lote(self):
+        if not self.dados_extraidos:
+            messagebox.showwarning("Aviso", "Extraia e edite os dados primeiro!")
+            return
+
+        messagebox.showinfo("Em Lote",
+                            "Selecione a pasta de modelos a processar.\n"
+                            "Cada modelo sera preenchido com os mesmos dados.")
+
+        pasta_modelos = filedialog.askdirectory(title="Selecione a pasta com modelos")
+        if not pasta_modelos:
+            return
+
+        pasta_saida = filedialog.askdirectory(title="Selecione a pasta de saida")
+        if not pasta_saida:
+            return
+
+        processados = 0
+        erros_lote = []
+
+        for arquivo in sorted(os.listdir(pasta_modelos)):
+            if not (arquivo.endswith('.odt') or arquivo.endswith('.docx')):
+                continue
+
+            caminho = os.path.join(pasta_modelos, arquivo)
+            ext = os.path.splitext(arquivo)[1].lower()
+
+            try:
+                saida = os.path.join(pasta_saida, f"preenchido_{arquivo}")
+
+                if ext == '.odt':
+                    gerar_odt_preenchido(caminho, self.dados_extraidos, saida)
+                elif ext == '.docx':
+                    if not docx_suportado():
+                        erros_lote.append(f"{arquivo}: DOCX nao suportado")
+                        continue
+                    gerar_docx_preenchido(caminho, self.dados_extraidos, saida)
+
+                processados += 1
+                adicionar_ao_historico(caminho, ext.replace('.', ''),
+                                       saida, len(self.dados_extraidos))
+            except Exception as e:
+                erros_lote.append(f"{arquivo}: {str(e)}")
+
+        self.atualizar_tabela_historico()
+        msg = f"Lote concluido!\n\nDocumentos processados: {processados}"
+        if erros_lote:
+            msg += f"\n\nErros:\n" + "\n".join(erros_lote)
+        messagebox.showinfo("Lote Finalizado", msg)
+        log_info(f"Processamento em lote: {processados} documentos")
+
+    # ============================================================
+    # ABA 5 - HISTORICO
+    # ============================================================
+
+    def criar_aba_historico(self):
+        frame = self.aba_historico
+
+        ttk.Label(frame, text="Historico de Documentos Gerados",
+                  font=("Helvetica", 16, "bold")).pack(pady=(15, 5))
+
+        ttk.Label(frame, text="Registro dos ultimos documentos gerados com o aplicativo",
+                  bootstyle="secondary", font=("Helvetica", 10)).pack(pady=(0, 10))
+
+        frame_botoes_hist = ttk.Frame(frame)
+        frame_botoes_hist.pack(fill=tk.X, padx=25, pady=5)
+
+        ttk.Button(frame_botoes_hist, text="🔄 Atualizar",
+                   command=self.atualizar_tabela_historico,
+                   bootstyle="secondary-outline", padding=(15, 8)).pack(side=tk.RIGHT, padx=5)
+
+        canvas_hist_frame = ttk.Frame(frame)
+        canvas_hist_frame.pack(fill=tk.BOTH, expand=True, padx=25, pady=5)
+
+        self.canvas_historico = tk.Canvas(canvas_hist_frame, bg=self.cores['canvas_bg'],
+                                           relief="flat", borderwidth=0,
+                                           highlightthickness=0)
+        scrollbar_hist = ttk.Scrollbar(canvas_hist_frame, orient=tk.VERTICAL,
+                                        command=self.canvas_historico.yview)
+        self.frame_scroll_hist = ttk.Frame(self.canvas_historico)
+
+        self.frame_scroll_hist.bind("<Configure>",
+                                    lambda e: self.canvas_historico.configure(
+                                        scrollregion=self.canvas_historico.bbox("all")))
+        self.canvas_historico.create_window((0, 0), window=self.frame_scroll_hist, anchor="nw")
+        self.canvas_historico.configure(yscrollcommand=scrollbar_hist.set)
+
+        self.canvas_historico.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar_hist.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self.status_historico = ttk.Label(frame, text="",
+                                           bootstyle="secondary", anchor=tk.W,
+                                           padding=(10, 5))
+        self.status_historico.pack(side=tk.BOTTOM, fill=tk.X)
+
+        self.atualizar_tabela_historico()
+
+    def atualizar_tabela_historico(self):
+        for widget in self.frame_scroll_hist.winfo_children():
+            widget.destroy()
+
+        historico = listar_historico()
+
+        if not historico:
+            ttk.Label(self.frame_scroll_hist,
+                      text="Nenhum documento gerado ainda.",
+                      bootstyle="secondary", font=("Helvetica", 11)).pack(pady=20)
+            self.status_historico.config(text="Historico vazio")
+            return
+
+        colunas_frame = ttk.Frame(self.frame_scroll_hist)
+        colunas_frame.pack(fill=tk.X, padx=10, pady=(5, 2))
+
+        ttk.Label(colunas_frame, text="Data", font=("Helvetica", 10, "bold"),
+                  width=12).pack(side=tk.LEFT, padx=5)
+        ttk.Label(colunas_frame, text="Modelo", font=("Helvetica", 10, "bold"),
+                  width=30, anchor=tk.W).pack(side=tk.LEFT, padx=5)
+        ttk.Label(colunas_frame, text="Campos", font=("Helvetica", 10, "bold"),
+                  width=8).pack(side=tk.LEFT, padx=5)
+        ttk.Label(colunas_frame, text="Arquivo de Saida", font=("Helvetica", 10, "bold"),
+                  width=40, anchor=tk.W).pack(side=tk.LEFT, padx=5)
+
+        ttk.Separator(self.frame_scroll_hist, orient=tk.HORIZONTAL).pack(fill=tk.X, padx=5)
+
+        for item in historico:
+            linha = ttk.Frame(self.frame_scroll_hist)
+            linha.pack(fill=tk.X, padx=10, pady=2)
+
+            data_str = item.get('data', '')[:10]
+            modelo = item.get('modelo', '-')[:35]
+            campos = str(item.get('num_campos_preenchidos', '-'))
+            saida = os.path.basename(item.get('saida', '-'))[:40]
+
+            ttk.Label(linha, text=data_str, width=12).pack(side=tk.LEFT, padx=5)
+            ttk.Label(linha, text=modelo, width=30, anchor=tk.W).pack(side=tk.LEFT, padx=5)
+            ttk.Label(linha, text=campos, width=8).pack(side=tk.LEFT, padx=5)
+            ttk.Label(linha, text=saida, width=40, anchor=tk.W).pack(side=tk.LEFT, padx=5)
+
+        self.status_historico.config(text=f"{len(historico)} documento(s) no historico")
+
+    # ============================================================
+    # BACKUP AUTOMATICO
+    # ============================================================
+
+    def _iniciar_backup(self):
+        self._tentar_restaurar_backup()
+        self._executar_backup()
+
+    def _executar_backup(self):
+        if self.mapeamento and self.modelo_path:
+            backup = {
+                'modelo_path': self.modelo_path,
+                'modelo_tipo': self.modelo_tipo,
+                'placeholders': self.placeholders,
+                'mapeamento': {}
+            }
+            for ph, dados in self.mapeamento.items():
+                backup['mapeamento'][ph] = {
+                    'documento_path': dados['documento_path'],
+                    'documento_tipo': dados['documento_tipo'],
+                    'x1': dados['x1'],
+                    'y1': dados['y1'],
+                    'x2': dados['x2'],
+                    'y2': dados['y2']
+                }
+            try:
+                os.makedirs(os.path.dirname(BACKUP_FILE), exist_ok=True)
+                with open(BACKUP_FILE, 'w', encoding='utf-8') as f:
+                    json.dump(backup, f, indent=2, ensure_ascii=False)
+            except Exception:
+                pass
+
+        self.root.after(BACKUP_INTERVAL, self._executar_backup)
+
+    def _tentar_restaurar_backup(self):
+        if not os.path.exists(BACKUP_FILE):
+            return
+        try:
+            with open(BACKUP_FILE, 'r', encoding='utf-8') as f:
+                backup = json.load(f)
+            if backup.get('mapeamento'):
+                if messagebox.askyesno("Backup encontrado",
+                                       "Um backup de mapeamento foi encontrado.\nDeseja restaura-lo?"):
+                    self.modelo_path = backup.get('modelo_path')
+                    self.modelo_tipo = backup.get('modelo_tipo')
+                    self.placeholders = backup.get('placeholders', [])
+
+                    self.lista_placeholders.delete(0, tk.END)
+                    for ph in self.placeholders:
+                        self.lista_placeholders.insert(tk.END, ph)
+                    self.atualizar_lista_placeholders_aba2()
+
+                    self.mapeamento = {}
+                    for ph, dados in backup['mapeamento'].items():
+                        self.mapeamento[ph] = {
+                            'documento_path': dados['documento_path'],
+                            'documento_tipo': dados['documento_tipo'],
+                            'x1': dados['x1'],
+                            'y1': dados['y1'],
+                            'x2': dados['x2'],
+                            'y2': dados['y2']
+                        }
+                    self.atualizar_lista_mapeamentos()
+                    self.status_modelo.config(text="Mapeamento restaurado do backup.")
+                    self.status_anexos.config(text="Mapeamento restaurado. Continue de onde parou.")
+                    log_info("Backup restaurado com sucesso")
+        except Exception as e:
+            log_warning(f"Falha ao restaurar backup: {str(e)}")
+
+    # ============================================================
+    # PREFERENCIAS E SOBRE
+    # ============================================================
+
+    def _restaurar_preferencias(self):
+        prefs = carregar_preferencias()
+        tema_salvo = prefs.get('tema', 'cosmo')
+        if tema_salvo != self.tema_atual:
+            self.root.style.theme_use(tema_salvo)
+            self.tema_atual = tema_salvo
+            self.cores = dict(DARK_THEME if tema_salvo == 'cyborg' else LIGHT_THEME)
+            self.btn_modo_escuro.config(
+                text="☀ Modo Claro" if tema_salvo == 'cyborg' else "🌙 Modo Escuro"
+            )
+
+        tamanho = prefs.get('tamanho_janela', '1280x820')
+        try:
+            self.root.geometry(tamanho)
+        except Exception:
+            pass
+
+    def _ao_fechar(self):
+        try:
+            geo = self.root.geometry()
+            set_preferencia('tamanho_janela', geo)
+        except Exception:
+            pass
+        log_info("App finalizado")
+        self.root.destroy()
+
+    def _mostrar_sobre(self):
+        messagebox.showinfo(
+            "Sobre - Meu App de Documentos",
+            f"Meu App de Documentos v{VERSAO}\n\n"
+            "Automatize o preenchimento de documentos ODT/DOCX usando OCR.\n\n"
+            "Desenvolvido por Adriano Anthony Jesus Azulay de Araujo\n"
+            "E-mail: adrianoanthonymma16@gmail.com\n\n"
+            "100% offline - Licenca proprietaria"
+        )
 
 
 if __name__ == "__main__":

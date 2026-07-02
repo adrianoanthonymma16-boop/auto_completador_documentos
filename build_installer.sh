@@ -13,7 +13,7 @@
 # =============================================================================
 set -e
 APP_NAME="Meu App de Documentos"
-APP_VERSION="3.4"
+APP_VERSION="3.6"
 OUTPUT_FILE="MeuAppDocumentos-v${APP_VERSION}-installer.run"
 BUILD_DIR="/tmp/meu_app_build_$$"
 echo "=================================================="
@@ -38,12 +38,18 @@ cp "$PROJECT_DIR/run.py"                          "$BUILD_DIR/"
 # Módulos src/
 cp "$PROJECT_DIR/src/config.py"                   "$BUILD_DIR/src/"
 cp "$PROJECT_DIR/src/validadores.py"              "$BUILD_DIR/src/"
+cp "$PROJECT_DIR/src/validadores_extra.py"        "$BUILD_DIR/src/"
 cp "$PROJECT_DIR/src/mensagens.py"                "$BUILD_DIR/src/"
+cp "$PROJECT_DIR/src/i18n.py"                     "$BUILD_DIR/src/"
+cp "$PROJECT_DIR/src/logger.py"                   "$BUILD_DIR/src/"
+cp "$PROJECT_DIR/src/preferencias.py"             "$BUILD_DIR/src/"
+cp "$PROJECT_DIR/src/historico.py"                "$BUILD_DIR/src/"
 cp "$PROJECT_DIR/src/ocr.py"                      "$BUILD_DIR/src/"
 cp "$PROJECT_DIR/src/anexo_pdf.py"                "$BUILD_DIR/src/"
 cp "$PROJECT_DIR/src/anexo_heic.py"               "$BUILD_DIR/src/"
 cp "$PROJECT_DIR/src/modelo_odt.py"               "$BUILD_DIR/src/"
 cp "$PROJECT_DIR/src/modelo_docx.py"              "$BUILD_DIR/src/"
+cp "$PROJECT_DIR/src/modelos_salvos.py"           "$BUILD_DIR/src/"
 cp "$PROJECT_DIR/src/interface.py"                "$BUILD_DIR/src/"
 # Scripts de instalação e suporte
 cp "$PROJECT_DIR/install.sh"                      "$BUILD_DIR/"
