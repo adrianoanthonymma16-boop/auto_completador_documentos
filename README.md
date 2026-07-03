@@ -1,9 +1,9 @@
-# Meu App de Documentos
+# Meu App de Documentos &middot; [English](#english)
 
-[![Versão](https://img.shields.io/badge/versão-3.6-blue)](https://github.com/adrianoanthonymma16-boop/auto_completador_documentos)
+[![Version](https://img.shields.io/badge/version-3.6-blue)](https://github.com/adrianoanthonymma16-boop/auto_completador_documentos)
 [![Python](https://img.shields.io/badge/python-3.8+-green)](https://www.python.org/)
-[![Plataforma](https://img.shields.io/badge/plataforma-Linux-orange)](https://ubuntu.com/)
-[![Licença](https://img.shields.io/badge/licença-Proprietária-red)](LICENSE.txt)
+[![Platform](https://img.shields.io/badge/platform-Linux-orange)](https://ubuntu.com/)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE.txt)
 
 Automatize o preenchimento de documentos ODT/DOCX usando OCR com uma interface moderna e produtiva.
 
@@ -194,4 +194,208 @@ E-mail: adrianoanthonymma16@gmail.com
 
 ## Licença
 
-Software proprietário. Veja o arquivo [LICENSE.txt](LICENSE.txt) para os termos completos.
+Software de código aberto sob a licença MIT. Veja o arquivo [LICENSE.txt](LICENSE.txt) para os termos completos.
+
+<br>
+<hr>
+<br>
+
+<a id="english"></a>
+
+# My Document App &middot; [Português](#meu-app-de-documentos)
+
+[![Version](https://img.shields.io/badge/version-3.6-blue)](https://github.com/adrianoanthonymma16-boop/auto_completador_documentos)
+[![Python](https://img.shields.io/badge/python-3.8+-green)](https://www.python.org/)
+[![Platform](https://img.shields.io/badge/platform-Linux-orange)](https://ubuntu.com/)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE.txt)
+
+Automate ODT/DOCX document filling using OCR with a modern and productive interface.
+
+---
+
+## Features
+
+- **ODT/DOCX Templates** — Placeholders `{{name}}`, `{{cpf}}`, `{{date}}`
+- **Smart OCR** — Tesseract with advanced image pre-processing
+- **Template Library** — Save and reuse frequent templates with one click
+- **Visual Mapping** — Draw rectangles on fields for precise extraction
+- **Dark Mode** — Instant toggle with a button (Ctrl+D)
+- **Keyboard Shortcuts** — Ctrl+O (template), Ctrl+A (attach), Ctrl+G (generate), Ctrl+S (save), Ctrl+Z (undo), Ctrl+E (export), Ctrl+I (import)
+- **Zoom and Pan** — Ctrl+Scroll to zoom, middle button to drag
+- **Undo/Redo** — Undo and redo mapping rectangles
+- **Data Validation** — CPF, date, email and phone validated automatically
+- **Export/Import Mapping** — Save and load configurations in JSON
+- **Automatic Backup** — Mapping saved every 60 seconds — never lose your work
+- **Generation History** — Complete log of generated documents
+- **Batch Processing** — Fill multiple documents with the same data
+- **100% Offline** — No cloud, no internet, your data never leaves the machine
+
+---
+
+## Requirements
+
+### System
+
+```bash
+sudo apt update
+sudo apt install -y python3 python3-pip python3-tk tesseract-ocr tesseract-ocr-por zenity makeself
+```
+
+### Python
+
+```bash
+pip3 install Pillow opencv-python pytesseract pypdfium2 python-docx ttkbootstrap
+```
+
+Or use the automated script:
+
+```bash
+bash install_dependencies.sh
+```
+
+### Optional — HEIC (iPhone)
+
+```bash
+sudo apt install -y libheif-dev
+pip3 install pyheif
+```
+
+---
+
+## Quick Start
+
+```bash
+python3 run.py
+```
+
+### Workflow
+
+1. **Template** — Load an ODT/DOCX with `{{...}}` placeholders
+2. **Saved Templates** — (optional) Save to library for reuse
+3. **Attach and Map** — Attach photos/PDFs, draw rectangles on fields
+4. **Generate Document** — Extract via OCR, review, generate the final document
+5. **History** — Browse previously generated documents
+
+---
+
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+O` | Load template |
+| `Ctrl+A` | Attach document |
+| `Ctrl+G` | Generate filled document |
+| `Ctrl+S` | Save mapping |
+| `Ctrl+Z` | Undo rectangle |
+| `Ctrl+E` | Export mapping |
+| `Ctrl+I` | Import mapping |
+| `Ctrl+D` | Toggle dark/light mode |
+| `Delete` | Remove selected rectangle |
+| `Ctrl+Scroll` | Zoom image |
+| `Middle Button + Drag` | Pan image |
+
+---
+
+## Build Installer
+
+```bash
+bash build_installer.sh
+```
+
+Generates a self-extracting `.run` file.
+
+---
+
+## Install
+
+```bash
+chmod +x MeuAppDocumentos-*.run
+./MeuAppDocumentos-*.run
+```
+
+---
+
+## Project Structure
+
+```
+meu_app_documentos/
+├── run.py
+├── build_installer.sh
+├── install.sh
+├── install_dependencies.sh
+├── iniciar.sh
+├── desinstalar.sh
+├── requirements.txt
+├── .editorconfig
+├── .gitattributes
+├── LICENSE.txt
+├── README.md
+├── CHANGELOG.md
+├── SECURITY.md
+├── .github/
+│   └── ISSUE_TEMPLATE/
+│       ├── bug_report.md
+│       └── feature_request.md
+└── src/
+    ├── config.py
+    ├── validadores.py
+    ├── validadores_extra.py
+    ├── mensagens.py
+    ├── i18n.py
+    ├── logger.py
+    ├── preferencias.py
+    ├── historico.py
+    ├── ocr.py
+    ├── anexo_pdf.py
+    ├── anexo_heic.py
+    ├── modelo_odt.py
+    ├── modelo_docx.py
+    ├── modelos_salvos.py
+    └── interface.py
+```
+
+---
+
+## Versions
+
+### v3.6 (current)
+- Dark mode with interactive button (Ctrl+D)
+- Keyboard shortcuts for all main operations
+- Zoom (Ctrl+Scroll) and Pan (middle button) on canvas
+- Undo/Redo of rectangles
+- Automatic CPF, date, email and phone validation
+- Export/Import mapping in JSON
+- Automatic mapping backup every 60 seconds
+- Generated documents history (new tab)
+- Batch processing of multiple templates
+- Preferences persistence (theme, window size, last directory)
+- Project files: requirements.txt, .editorconfig, .gitattributes, SECURITY.md, CHANGELOG.md
+- GitHub Issue Templates (bug report, feature request)
+- File-based logging system
+- Internationalization module prepared
+- New dependency: `ttkbootstrap`
+
+### v3.5
+- Modern interface with **ttkbootstrap** (Cosmo theme)
+- **Saved Templates Library** — save and reuse templates
+- New "Saved Templates" tab with interactive table
+- Larger window (1280x820), styled components
+- Module `src/modelos_salvos.py`
+
+### v3.4 (branch [`v3.4-legacy`](https://github.com/adrianoanthonymma16-boop/auto_completador_documentos/tree/v3.4-legacy))
+- Traditional tkinter interface
+- Flow: Template → Attach and Map (OCR) → Generate Document
+- Support for ODT, DOCX, PDF, HEIC and images
+
+---
+
+## Contact
+
+Adriano Anthony Jesus Azulay de Araujo  
+E-mail: adrianoanthonymma16@gmail.com
+
+---
+
+## License
+
+Open source software under the MIT license. See [LICENSE.txt](LICENSE.txt) for the full terms.

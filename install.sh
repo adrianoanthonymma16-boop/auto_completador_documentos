@@ -54,7 +54,7 @@ zenity --info \
 LICENSE_TEXT="$(cat "$LICENSE_FILE" 2>/dev/null || echo 'Arquivo de licença não encontrado.')"
 
 zenity --text-info \
-    --title="Contrato de Licença — $APP_NAME" \
+    --title="Licença MIT — $APP_NAME" \
     --filename="$LICENSE_FILE" \
     --checkbox="Li e aceito os termos da licença" \
     --ok-label="Aceitar e Continuar" \
