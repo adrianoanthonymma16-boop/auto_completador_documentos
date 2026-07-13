@@ -13,7 +13,7 @@
 # =============================================================================
 set -e
 APP_NAME="Meu App de Documentos"
-APP_VERSION="3.7"
+APP_VERSION="3.8"
 OUTPUT_FILE="MeuAppDocumentos-v${APP_VERSION}-installer.run"
 BUILD_DIR="/tmp/meu_app_build_$$"
 echo "=================================================="
