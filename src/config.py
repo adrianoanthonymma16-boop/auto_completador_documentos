@@ -5,7 +5,7 @@ Configurações e constantes do aplicativo
 import os
 
 # Versão do app
-VERSAO = "3.6"
+VERSAO = "3.7"
 
 # Pasta do usuário para salvar configurações
 PASTA_APP = os.path.expanduser("~/.meu_app_documentos")

@@ -1,7 +1,7 @@
 """
 Módulo principal da interface gráfica
 Gerencia as abas, desenho de retângulos e orquestra os outros módulos
-FLUXO: Modelo -> Modelos Salvos -> Anexar -> Mapear -> Extrair -> Editar -> Gerar
+FLUXO: Modelo -> Modelos Salvos -> Anexar -> Mapear -> Extrair/Preencher -> Editar -> Gerar
 """
 
 import tkinter as tk
@@ -1152,6 +1152,10 @@ class AppDocumentos:
                    command=self.extrair_e_editar_dados,
                    bootstyle="primary", padding=(25, 12)).pack(side=tk.LEFT, padx=10)
 
+        ttk.Button(frame_botoes_gerar, text="✏️ Preencher Manualmente",
+                   command=self.preencher_manualmente,
+                   bootstyle="info", padding=(25, 12)).pack(side=tk.LEFT, padx=10)
+
         ttk.Button(frame_botoes_gerar, text="📄 Gerar Documento Preenchido  [Ctrl+G]",
                    command=self.gerar_documento_preenchido,
                    bootstyle="success", padding=(25, 12)).pack(side=tk.LEFT, padx=10)
@@ -1198,6 +1202,18 @@ class AppDocumentos:
 
         self.abrir_janela_edicao(dados_temp)
         log_info("Extracao de dados iniciada")
+
+    def preencher_manualmente(self):
+        if not self.placeholders:
+            mostrar_aviso_sem_modelo()
+            return
+
+        dados_temp = {}
+        for placeholder in self.placeholders:
+            dados_temp[placeholder] = self.dados_extraidos.get(placeholder, "")
+
+        self.abrir_janela_edicao(dados_temp)
+        log_info("Preenchimento manual iniciado")
 
     def abrir_janela_edicao(self, dados_temp):
         self.janela_edicao = tk.Toplevel(self.root)
