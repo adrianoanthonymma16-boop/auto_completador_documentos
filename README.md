@@ -1,17 +1,19 @@
 # Meu App de Documentos &middot; [English](#english)
 
-[![Version](https://img.shields.io/badge/version-3.6-blue)](https://github.com/adrianoanthonymma16-boop/auto_completador_documentos)
+[![Version](https://img.shields.io/badge/version-3.8-blue)](https://github.com/adrianoanthonymma16-boop/auto_completador_documentos)
 [![Python](https://img.shields.io/badge/python-3.8+-green)](https://www.python.org/)
 [![Platform](https://img.shields.io/badge/platform-Linux-orange)](https://ubuntu.com/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE.txt)
 
-Automatize o preenchimento de documentos ODT/DOCX usando OCR com uma interface moderna e produtiva.
+Automatize o preenchimento de documentos ODT/DOCX usando OCR com duas interfaces disponíveis: ttkbootstrap (leve) e CustomTkinter (moderna).
 
 ---
 
 ## Funcionalidades
 
+- **Duas Interfaces** — Escolha entre ttkbootstrap (leve) ou CustomTkinter (visual moderno)
 - **Modelos ODT/DOCX** — Placeholders `{{nome}}`, `{{cpf}}`, `{{data}}`
+- **Preenchimento Manual** — Digite valores diretamente nos placeholders, sem precisar de OCR
 - **OCR Inteligente** — Tesseract com pré-processamento avançado de imagem
 - **Biblioteca de Modelos** — Salve e reutilize templates frequentes com um clique
 - **Mapeamento Visual** — Desenhe retângulos nos campos para extração precisa
@@ -40,7 +42,7 @@ sudo apt install -y python3 python3-pip python3-tk tesseract-ocr tesseract-ocr-p
 ### Python
 
 ```bash
-pip3 install Pillow opencv-python pytesseract pypdfium2 python-docx ttkbootstrap
+pip3 install Pillow opencv-python pytesseract pypdfium2 python-docx ttkbootstrap customtkinter
 ```
 
 Ou use o script automático:
@@ -61,7 +63,11 @@ pip3 install pyheif
 ## Uso Rápido
 
 ```bash
+# Interface ttkbootstrap (original)
 python3 run.py
+
+# Interface CustomTkinter (moderna)
+python3 run_ctk.py
 ```
 
 ### Fluxo de Trabalho
@@ -95,19 +101,30 @@ python3 run.py
 ## Gerar Instalador
 
 ```bash
+# Versão ttkbootstrap (original)
 bash build_installer.sh
+
+# Versão CustomTkinter (moderna)
+bash build_installer_ctk.sh
 ```
 
-Gera um arquivo `.run` autoextraível.
+Gera arquivos `.run` autoextraíveis para cada interface.
 
 ---
 
 ## Instalar
 
 ```bash
+# ttkbootstrap
 chmod +x MeuAppDocumentos-*.run
 ./MeuAppDocumentos-*.run
+
+# CustomTkinter
+chmod +x MeuAppDocumentosCTk-*.run
+./MeuAppDocumentosCTk-*.run
 ```
+
+Ambas as versões podem coexistir na mesma máquina — são instaladas em diretórios separados.
 
 ---
 
@@ -115,12 +132,17 @@ chmod +x MeuAppDocumentos-*.run
 
 ```
 meu_app_documentos/
-├── run.py
-├── build_installer.sh
-├── install.sh
+├── run.py                    # Entry point tkinter
+├── run_ctk.py                # Entry point CustomTkinter
+├── build_installer.sh         # Gera instalador .run (tkinter)
+├── build_installer_ctk.sh     # Gera instalador .run (CustomTkinter)
+├── install.sh                 # Instalador interno tkinter
+├── install_ctk.sh             # Instalador interno CustomTkinter
 ├── install_dependencies.sh
-├── iniciar.sh
-├── desinstalar.sh
+├── iniciar.sh                 # Launcher tkinter
+├── iniciar_ctk.sh             # Launcher CustomTkinter
+├── desinstalar.sh             # Desinstalador tkinter
+├── desinstalar_ctk.sh         # Desinstalador CustomTkinter
 ├── requirements.txt
 ├── .editorconfig
 ├── .gitattributes
@@ -147,14 +169,27 @@ meu_app_documentos/
     ├── modelo_odt.py
     ├── modelo_docx.py
     ├── modelos_salvos.py
-    └── interface.py
+    ├── interface.py            # GUI tkinter/ttkbootstrap
+    └── interface_ctk.py        # GUI CustomTkinter
 ```
 
 ---
 
 ## Versões
 
-### v3.6 (atual)
+### v3.8 (atual)
+- **Interface CustomTkinter** — Nova GUI com visual moderno, scrollframes interativos e tema escuro/claro nativo
+- **Instalador duplo** — Instale e use ambas as interfaces lado a lado (ttkbootstrap + CustomTkinter)
+- **Preenchimento manual de placeholders** — Digite valores diretamente sem precisar de OCR ou documentos anexados
+- `run_ctk.py` — Entry point para a interface CustomTkinter
+- Scripts de build/install/desinstalar específicos para cada interface
+- Nova dependência: `customtkinter >= 5.2.0`
+
+### v3.7
+- Preenchimento manual de placeholders (botão na aba Gerar)
+- Correções e melhorias nos instaladores
+
+### v3.6
 - Modo escuro com botão interativo (Ctrl+D)
 - Atalhos de teclado para todas as operações principais
 - Zoom (Ctrl+Scroll) e Pan (botão do meio) no canvas
@@ -204,18 +239,20 @@ Software de código aberto sob a licença MIT. Veja o arquivo [LICENSE.txt](LICE
 
 # My Document App &middot; [Português](#meu-app-de-documentos)
 
-[![Version](https://img.shields.io/badge/version-3.6-blue)](https://github.com/adrianoanthonymma16-boop/auto_completador_documentos)
+[![Version](https://img.shields.io/badge/version-3.8-blue)](https://github.com/adrianoanthonymma16-boop/auto_completador_documentos)
 [![Python](https://img.shields.io/badge/python-3.8+-green)](https://www.python.org/)
 [![Platform](https://img.shields.io/badge/platform-Linux-orange)](https://ubuntu.com/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE.txt)
 
-Automate ODT/DOCX document filling using OCR with a modern and productive interface.
+Automate ODT/DOCX document filling using OCR with two available interfaces: ttkbootstrap (lightweight) and CustomTkinter (modern).
 
 ---
 
 ## Features
 
+- **Dual Interface** — Choose between ttkbootstrap (lightweight) or CustomTkinter (modern look)
 - **ODT/DOCX Templates** — Placeholders `{{name}}`, `{{cpf}}`, `{{date}}`
+- **Manual Filling** — Type values directly into placeholders, no OCR needed
 - **Smart OCR** — Tesseract with advanced image pre-processing
 - **Template Library** — Save and reuse frequent templates with one click
 - **Visual Mapping** — Draw rectangles on fields for precise extraction
@@ -244,7 +281,7 @@ sudo apt install -y python3 python3-pip python3-tk tesseract-ocr tesseract-ocr-p
 ### Python
 
 ```bash
-pip3 install Pillow opencv-python pytesseract pypdfium2 python-docx ttkbootstrap
+pip3 install Pillow opencv-python pytesseract pypdfium2 python-docx ttkbootstrap customtkinter
 ```
 
 Or use the automated script:
@@ -265,7 +302,11 @@ pip3 install pyheif
 ## Quick Start
 
 ```bash
+# ttkbootstrap interface (original)
 python3 run.py
+
+# CustomTkinter interface (modern)
+python3 run_ctk.py
 ```
 
 ### Workflow
@@ -319,12 +360,17 @@ chmod +x MeuAppDocumentos-*.run
 
 ```
 meu_app_documentos/
-├── run.py
-├── build_installer.sh
-├── install.sh
+├── run.py                    # Entry point tkinter
+├── run_ctk.py                # Entry point CustomTkinter
+├── build_installer.sh         # .run installer builder (tkinter)
+├── build_installer_ctk.sh     # .run installer builder (CustomTkinter)
+├── install.sh                 # Internal installer tkinter
+├── install_ctk.sh             # Internal installer CustomTkinter
 ├── install_dependencies.sh
-├── iniciar.sh
-├── desinstalar.sh
+├── iniciar.sh                 # Launcher tkinter
+├── iniciar_ctk.sh             # Launcher CustomTkinter
+├── desinstalar.sh             # Uninstaller tkinter
+├── desinstalar_ctk.sh         # Uninstaller CustomTkinter
 ├── requirements.txt
 ├── .editorconfig
 ├── .gitattributes
@@ -351,14 +397,27 @@ meu_app_documentos/
     ├── modelo_odt.py
     ├── modelo_docx.py
     ├── modelos_salvos.py
-    └── interface.py
+    ├── interface.py            # GUI tkinter/ttkbootstrap
+    └── interface_ctk.py        # GUI CustomTkinter
 ```
 
 ---
 
 ## Versions
 
-### v3.6 (current)
+### v3.8 (current)
+- **CustomTkinter Interface** — New GUI with modern look, interactive scrollframes and native dark/light theme
+- **Dual installer** — Install and use both interfaces side by side (ttkbootstrap + CustomTkinter)
+- **Manual placeholder filling** — Type values directly without OCR or attached documents
+- `run_ctk.py` — Entry point for the CustomTkinter interface
+- Separate build/install/uninstall scripts for each interface
+- New dependency: `customtkinter >= 5.2.0`
+
+### v3.7
+- Manual placeholder filling (button in the Generate tab)
+- Installer fixes and improvements
+
+### v3.6
 - Dark mode with interactive button (Ctrl+D)
 - Keyboard shortcuts for all main operations
 - Zoom (Ctrl+Scroll) and Pan (middle button) on canvas
