@@ -5,7 +5,7 @@ Extrai strings da interface para facilitar traduções futuras
 
 TEXTO = {
     "pt": {
-        "app_titulo": "Meu App de Documentos",
+        "app_titulo": "AutoDoc",
         "aba_modelo": "Modelo",
         "aba_modelos_salvos": "Modelos Salvos",
         "aba_anexos": "Anexar e Mapear",

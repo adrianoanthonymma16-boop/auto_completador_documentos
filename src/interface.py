@@ -45,7 +45,7 @@ from validadores_extra import sugerir_validacao, validar_campo
 class AppDocumentos:
     def __init__(self, root):
         self.root = root
-        self.root.title(f"Meu App de Documentos - v{VERSAO}")
+        self.root.title(f"AutoDoc - v{VERSAO}")
         self.root.geometry("1280x820")
         self.root.minsize(900, 600)
 
@@ -1600,8 +1600,8 @@ class AppDocumentos:
 
     def _mostrar_sobre(self):
         messagebox.showinfo(
-            "Sobre - Meu App de Documentos",
-            f"Meu App de Documentos v{VERSAO}\n\n"
+            "Sobre - AutoDoc",
+            f"AutoDoc v{VERSAO}\n\n"
             "Automatize o preenchimento de documentos ODT/DOCX usando OCR.\n\n"
             "Desenvolvido por Adriano Anthony Jesus Azulay de Araujo\n"
             "E-mail: adrianoanthonymma16@gmail.com\n\n"

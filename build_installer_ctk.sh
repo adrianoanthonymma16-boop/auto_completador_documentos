@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Meu App de Documentos (CustomTkinter) — Build do Instalador .run
+# AutoDoc (CTk) — Build do Instalador .run
 # =============================================================================
 set -e
 
-APP_NAME="Meu App de Documentos (CustomTkinter)"
+APP_NAME="AutoDoc (CTk)"
 APP_VERSION="3.8"
-OUTPUT_FILE="MeuAppDocumentosCTk-v${APP_VERSION}-installer.run"
-BUILD_DIR="/tmp/meu_app_ctk_build_$$"
+OUTPUT_FILE="AutoDocCTk-v${APP_VERSION}-installer.run"
+BUILD_DIR="/tmp/autodoc_ctk_build_$$"
 
 echo "=================================================="
 echo "  Build do Instalador CTk — $APP_NAME v$APP_VERSION"

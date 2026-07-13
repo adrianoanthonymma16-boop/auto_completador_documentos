@@ -44,8 +44,8 @@ from validadores_extra import sugerir_validacao, validar_campo
 class AppDocumentosCTK:
     def __init__(self, root):
         self.root = root
-        self.root.title(f"Meu App de Documentos - v{VERSAO} (CustomTkinter)")
-        self.root.iconname("Meu App de Documentos")
+        self.root.title(f"AutoDoc - v{VERSAO} (CustomTkinter)")
+        self.root.iconname("AutoDoc")
 
         screen_w = self.root.winfo_screenwidth()
         screen_h = self.root.winfo_screenheight()
@@ -1603,8 +1603,8 @@ class AppDocumentosCTK:
 
     def _mostrar_sobre(self):
         messagebox.showinfo(
-            "Sobre - Meu App de Documentos",
-            f"Meu App de Documentos v{VERSAO} (CustomTkinter)\n\n"
+            "Sobre - AutoDoc",
+            f"AutoDoc v{VERSAO} (CustomTkinter)\n\n"
             "Automatize o preenchimento de documentos ODT/DOCX usando OCR.\n\n"
             "Interface moderna com CustomTkinter\n"
             "Desenvolvido por Adriano Anthony Jesus Azulay de Araujo\n"

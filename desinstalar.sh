@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Meu App de Documentos — Desinstalador
+# AutoDoc — Desinstalador
 # =============================================================================
 
-APP_NAME="Meu App de Documentos"
+APP_NAME="AutoDoc"
 INSTALL_DIR="$(dirname "$(realpath "$0")")"
 
 # Verifica zenity
@@ -28,11 +28,11 @@ fi
 
 # Remove atalho da área de trabalho
 DESKTOP_DIR="$(xdg-user-dir DESKTOP 2>/dev/null || echo "$HOME/Desktop")"
-DESKTOP_FILE="$DESKTOP_DIR/meu-app-documentos.desktop"
+DESKTOP_FILE="$DESKTOP_DIR/autodoc.desktop"
 [ -f "$DESKTOP_FILE" ] && rm -f "$DESKTOP_FILE"
 
 # Remove entrada do menu
-MENU_FILE="$HOME/.local/share/applications/meu-app-documentos.desktop"
+MENU_FILE="$HOME/.local/share/applications/autodoc.desktop"
 [ -f "$MENU_FILE" ] && rm -f "$MENU_FILE"
 
 # Atualiza cache do menu

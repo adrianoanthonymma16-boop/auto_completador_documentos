@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Meu App de Documentos (CustomTkinter) — Desinstalador
+# AutoDoc (CTk) — Desinstalador
 # =============================================================================
 
-APP_NAME="Meu App de Documentos (CustomTkinter)"
+APP_NAME="AutoDoc (CTk)"
 INSTALL_DIR="$(dirname "$(realpath "$0")")"
 
 if ! command -v zenity &>/dev/null; then
@@ -25,10 +25,10 @@ if [ $? -ne 0 ]; then
 fi
 
 DESKTOP_DIR="$(xdg-user-dir DESKTOP 2>/dev/null || echo "$HOME/Desktop")"
-DESKTOP_FILE="$DESKTOP_DIR/meu-app-documentos-ctk.desktop"
+DESKTOP_FILE="$DESKTOP_DIR/autodoc-ctk.desktop"
 [ -f "$DESKTOP_FILE" ] && rm -f "$DESKTOP_FILE"
 
-MENU_FILE="$HOME/.local/share/applications/meu-app-documentos-ctk.desktop"
+MENU_FILE="$HOME/.local/share/applications/autodoc-ctk.desktop"
 [ -f "$MENU_FILE" ] && rm -f "$MENU_FILE"
 
 update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Meu App de Documentos (CustomTkinter) — Inicializador
+# AutoDoc (CTk) — Inicializador
 # =============================================================================
 
 APP_DIR="$(dirname "$(realpath "$0")")"

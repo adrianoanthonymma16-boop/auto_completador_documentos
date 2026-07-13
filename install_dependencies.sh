@@ -1,8 +1,8 @@
 #!/bin/bash
-# Instalador de Dependências - Meu App de Documentos
+# Instalador de Dependências - AutoDoc
 
 echo "=========================================="
-echo "  Instalando dependências do Meu App"
+echo "  Instalando dependências do AutoDoc"
 echo "=========================================="
 
 # Detecta a distribuição

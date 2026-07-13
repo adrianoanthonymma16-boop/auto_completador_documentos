@@ -15,7 +15,7 @@ All notable changes to this project will be documented in this file.
 - Export/Import mapping configurations (JSON)
 - Document preview in generation tab
 - Automatic backup of mapping state
-- Application logging system (~/.meu_app_documentos/app.log)
+- Application logging system (~/.autodoc/app.log)
 - Generation history tracking
 - User preferences persistence (window size, last directory, theme)
 - Project files: requirements.txt, .editorconfig, .gitattributes, SECURITY.md

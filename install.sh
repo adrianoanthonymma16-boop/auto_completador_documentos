@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Meu App de Documentos — Instalador Interno
+# AutoDoc — Instalador Interno
 # Executado automaticamente pelo .run auto-extraível
 # =============================================================================
 
-APP_NAME="Meu App de Documentos"
+APP_NAME="AutoDoc"
 APP_VERSION="3.8"
-APP_EXEC="meu-app-documentos"
+APP_EXEC="autodoc"
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 LICENSE_FILE="$SCRIPT_DIR/LICENSE.txt"
 
@@ -175,7 +175,7 @@ echo "90"
 echo "# Criando atalho no Desktop..."
 
 DESKTOP_DIR="$(xdg-user-dir DESKTOP 2>/dev/null || echo "$HOME/Desktop")"
-DESKTOP_FILE="$DESKTOP_DIR/meu-app-documentos.desktop"
+DESKTOP_FILE="$DESKTOP_DIR/autodoc.desktop"
 
 cat > "$DESKTOP_FILE" <<DESKTOP
 [Desktop Entry]
@@ -199,7 +199,7 @@ echo "95"
 echo "# Criando entrada no menu do sistema..."
 
 mkdir -p "$HOME/.local/share/applications"
-MENU_FILE="$HOME/.local/share/applications/meu-app-documentos.desktop"
+MENU_FILE="$HOME/.local/share/applications/autodoc.desktop"
 
 cat > "$MENU_FILE" <<DESKTOP
 [Desktop Entry]

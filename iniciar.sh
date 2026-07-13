@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Meu App de Documentos — Inicializador
+# AutoDoc — Inicializador
 # =============================================================================
 
 APP_DIR="$(dirname "$(realpath "$0")")"

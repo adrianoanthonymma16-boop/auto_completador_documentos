@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Meu App de Documentos - Entry Point CustomTkinter
+AutoDoc - Entry Point CustomTkinter
 """
 
 import sys

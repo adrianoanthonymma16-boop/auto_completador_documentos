@@ -5,7 +5,7 @@ Gerencia preferências do usuário salvas em JSON
 import os
 import json
 
-PREFS_PATH = os.path.expanduser("~/.meu_app_documentos/prefs.json")
+PREFS_PATH = os.path.expanduser("~/.autodoc/prefs.json")
 
 DEFAULTS = {
     "tema": "cosmo",

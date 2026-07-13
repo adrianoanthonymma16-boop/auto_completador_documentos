@@ -15,12 +15,12 @@ def _criar_logger():
     if LOGGER is not None:
         return LOGGER
 
-    pasta_app = os.path.expanduser("~/.meu_app_documentos")
+    pasta_app = os.path.expanduser("~/.autodoc")
     os.makedirs(pasta_app, exist_ok=True)
 
     log_path = os.path.join(pasta_app, "app.log")
 
-    LOGGER = logging.getLogger("MeuAppDocumentos")
+    LOGGER = logging.getLogger("AutoDoc")
     LOGGER.setLevel(logging.DEBUG)
 
     if LOGGER.handlers:
@@ -37,7 +37,7 @@ def _criar_logger():
     LOGGER.addHandler(fh)
 
     LOGGER.info("=" * 50)
-    LOGGER.info("Meu App de Documentos iniciado")
+    LOGGER.info("autodoc iniciado")
     LOGGER.info("=" * 50)
 
     return LOGGER

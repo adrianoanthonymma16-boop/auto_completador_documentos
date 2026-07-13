@@ -6,16 +6,16 @@
 # USO:
 #   1. Coloque este script na raiz do projeto (junto com run.py e src/)
 #   2. Execute: bash build_installer.sh
-#   3. O arquivo "MeuAppDocumentos-v3.4-installer.run" será gerado
+#   3. O arquivo "AutoDoc-v3.4-installer.run" será gerado
 #
 # REQUISITO:
 #   sudo apt install makeself
 # =============================================================================
 set -e
-APP_NAME="Meu App de Documentos"
+APP_NAME="AutoDoc"
 APP_VERSION="3.8"
-OUTPUT_FILE="MeuAppDocumentos-v${APP_VERSION}-installer.run"
-BUILD_DIR="/tmp/meu_app_build_$$"
+OUTPUT_FILE="AutoDoc-v${APP_VERSION}-installer.run"
+BUILD_DIR="/tmp/autodoc_build_$$"
 echo "=================================================="
 echo "  Build do Instalador — $APP_NAME v$APP_VERSION"
 echo "=================================================="

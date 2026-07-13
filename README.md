@@ -1,6 +1,6 @@
-# Meu App de Documentos &middot; [English](#english)
+# AutoDoc &middot; [English](#english)
 
-[![Version](https://img.shields.io/badge/version-3.8-blue)](https://github.com/adrianoanthonymma16-boop/auto_completador_documentos)
+[![Version](https://img.shields.io/badge/version-3.8-blue)](https://github.com/adrianoanthonymma16-boop/autodoc)
 [![Python](https://img.shields.io/badge/python-3.8+-green)](https://www.python.org/)
 [![Platform](https://img.shields.io/badge/platform-Linux-orange)](https://ubuntu.com/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE.txt)
@@ -116,12 +116,12 @@ Gera arquivos `.run` autoextraíveis para cada interface.
 
 ```bash
 # ttkbootstrap
-chmod +x MeuAppDocumentos-*.run
-./MeuAppDocumentos-*.run
+chmod +x AutoDoc-*.run
+./AutoDoc-*.run
 
 # CustomTkinter
-chmod +x MeuAppDocumentosCTk-*.run
-./MeuAppDocumentosCTk-*.run
+chmod +x AutoDocCTk-*.run
+./AutoDocCTk-*.run
 ```
 
 Ambas as versões podem coexistir na mesma máquina — são instaladas em diretórios separados.
@@ -131,7 +131,7 @@ Ambas as versões podem coexistir na mesma máquina — são instaladas em diret
 ## Estrutura do Projeto
 
 ```
-meu_app_documentos/
+autodoc/
 ├── run.py                    # Entry point tkinter
 ├── run_ctk.py                # Entry point CustomTkinter
 ├── build_installer.sh         # Gera instalador .run (tkinter)
@@ -213,7 +213,7 @@ meu_app_documentos/
 - Janela maior (1280x820), componentes estilizados
 - Módulo `src/modelos_salvos.py`
 
-### v3.4 (branch [`v3.4-legacy`](https://github.com/adrianoanthonymma16-boop/auto_completador_documentos/tree/v3.4-legacy))
+### v3.4 (branch [`v3.4-legacy`](https://github.com/adrianoanthonymma16-boop/autodoc/tree/v3.4-legacy))
 - Interface tkinter tradicional
 - Fluxo: Modelo → Anexar e Mapear (OCR) → Gerar Documento
 - Suporte a ODT, DOCX, PDF, HEIC e imagens
@@ -237,9 +237,9 @@ Software de código aberto sob a licença MIT. Veja o arquivo [LICENSE.txt](LICE
 
 <a id="english"></a>
 
-# My Document App &middot; [Português](#meu-app-de-documentos)
+# AutoDoc &middot; [Português](#autodoc)
 
-[![Version](https://img.shields.io/badge/version-3.8-blue)](https://github.com/adrianoanthonymma16-boop/auto_completador_documentos)
+[![Version](https://img.shields.io/badge/version-3.8-blue)](https://github.com/adrianoanthonymma16-boop/autodoc)
 [![Python](https://img.shields.io/badge/python-3.8+-green)](https://www.python.org/)
 [![Platform](https://img.shields.io/badge/platform-Linux-orange)](https://ubuntu.com/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE.txt)
@@ -350,8 +350,8 @@ Generates a self-extracting `.run` file.
 ## Install
 
 ```bash
-chmod +x MeuAppDocumentos-*.run
-./MeuAppDocumentos-*.run
+chmod +x AutoDoc-*.run
+./AutoDoc-*.run
 ```
 
 ---
@@ -359,7 +359,7 @@ chmod +x MeuAppDocumentos-*.run
 ## Project Structure
 
 ```
-meu_app_documentos/
+autodoc/
 ├── run.py                    # Entry point tkinter
 ├── run_ctk.py                # Entry point CustomTkinter
 ├── build_installer.sh         # .run installer builder (tkinter)
@@ -441,7 +441,7 @@ meu_app_documentos/
 - Larger window (1280x820), styled components
 - Module `src/modelos_salvos.py`
 
-### v3.4 (branch [`v3.4-legacy`](https://github.com/adrianoanthonymma16-boop/auto_completador_documentos/tree/v3.4-legacy))
+### v3.4 (branch [`v3.4-legacy`](https://github.com/adrianoanthonymma16-boop/autodoc/tree/v3.4-legacy))
 - Traditional tkinter interface
 - Flow: Template → Attach and Map (OCR) → Generate Document
 - Support for ODT, DOCX, PDF, HEIC and images

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Meu App de Documentos (CustomTkinter) — Instalador Interno
+# AutoDoc (CTk) — Instalador Interno
 # =============================================================================
 
-APP_NAME="Meu App de Documentos (CustomTkinter)"
+APP_NAME="AutoDoc (CTk)"
 APP_VERSION="3.8"
-APP_EXEC="meu-app-documentos-ctk"
+APP_EXEC="autodoc-ctk"
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 LICENSE_FILE="$SCRIPT_DIR/LICENSE.txt"
 
@@ -147,7 +147,7 @@ echo "90"
 echo "# Criando atalho no Desktop..."
 
 DESKTOP_DIR="$(xdg-user-dir DESKTOP 2>/dev/null || echo "$HOME/Desktop")"
-DESKTOP_FILE="$DESKTOP_DIR/meu-app-documentos-ctk.desktop"
+DESKTOP_FILE="$DESKTOP_DIR/autodoc-ctk.desktop"
 
 cat > "$DESKTOP_FILE" <<DESKTOP
 [Desktop Entry]
@@ -169,7 +169,7 @@ echo "95"
 echo "# Criando entrada no menu do sistema..."
 
 mkdir -p "$HOME/.local/share/applications"
-MENU_FILE="$HOME/.local/share/applications/meu-app-documentos-ctk.desktop"
+MENU_FILE="$HOME/.local/share/applications/autodoc-ctk.desktop"
 
 cat > "$MENU_FILE" <<DESKTOP
 [Desktop Entry]

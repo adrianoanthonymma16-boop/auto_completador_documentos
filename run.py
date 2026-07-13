@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Meu App de Documentos - Ponto de Entrada
+AutoDoc - Ponto de Entrada
 """
 
 import sys

@@ -8,7 +8,7 @@ import os
 VERSAO = "3.8"
 
 # Pasta do usuário para salvar configurações
-PASTA_APP = os.path.expanduser("~/.meu_app_documentos")
+PASTA_APP = os.path.expanduser("~/.autodoc")
 
 # Formatos suportados para MODELO (documento com placeholders)
 MODELO_EXTENSOES = {
