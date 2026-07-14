@@ -1,0 +1,463 @@
+{
+  "_diretrizes_ia": {
+    "atualizacao_obrigatoria": "ESTE ARQUIVO DEVE SER ATUALIZADO A CADA MUDANCA NO CODIGO, estrutura, dependencias ou features. TODA alteracao feita pelo assistente DEVE ser registrada aqui.",
+    "commit_obrigatorio": "AO TERMINAR QUALQUER ATUALIZACAO, o assistente DEVE perguntar ao usuario: 'Deseja fazer commit e push para o GitHub?'",
+    "salvar_na_memory": "TODAS as atualizacoes, novos modulos, funcoes, dados, frameworks, estruturas e mudancas DEVEM ser registradas nesta .project_memory.json. Ela e a fonte unica de conhecimento do assistente sobre o projeto.",
+    "alinhamento": "Este documento deve permanecer alinhado com README.md, CHANGELOG.md e SECURITY.md.",
+    "gitignore": "Este arquivo .project_memory.json esta listado no .gitignore do projeto e NAO deve ser commitado."
+  },
+
+  "projeto": {
+    "nome": "AutoDoc",
+    "nome_alternativo": "AutoDoc",
+    "versao": "3.9",
+    "descricao": "Aplicativo desktop GUI 100% offline para automatizar o preenchimento de documentos ODT e DOCX usando OCR a partir de fotos/PDFs escaneados. Suporte a multiplos modelos, multiplas fontes, placeholders unificados e geracao unificada.",
+    "autor": "Adriano Anthony Jesus Azulay de Araujo",
+    "email": "adrianoanthonymma16@gmail.com",
+    "licenca": "MIT",
+    "plataforma": "Linux (Ubuntu/Debian)",
+    "python_minimo": "3.8",
+    "idioma": "pt (internacionalizacao preparada para mais idiomas)"
+  },
+
+  "git": {
+    "remote": "https://github.com/adrianoanthonymma16-boop/autodoc",
+    "branch_atual": "main",
+    "branches": ["main", "v3.4-legacy"],
+    "ultimos_commits": [
+      "eda2e44 - v3.9 - changelog: v3.7, v3.8, v3.9 com bug fix documentado",
+      "556c5ca - v3.9 - docs: README atualizado com multiplos modelos, lote de fontes e geracao unificada",
+      "3e3e904 - v3.9 - Multiplos modelos + placeholders unificados + geracao unificada",
+      "c67668b - v3.9 - Lote de multiplas fontes -> multiplas saidas",
+      "310dbfb - v3.8 - Rebrand: AutoDoc (nome, icone, repositorio GitHub)"
+    ]
+  },
+
+  "stack": {
+    "linguagem": "Python 3.8+",
+    "gui": {
+      "framework": "DUPLO: tkinter + ttkbootstrap (interface.py) E CustomTkinter (interface_ctk.py)",
+      "temas_tk": ["cosmo (claro)", "cyborg (escuro)"],
+      "temas_ctk": "Light/Dark nativo via set_appearance_mode()",
+      "atalho_toggle_tema": "Ctrl+D (ambas interfaces)",
+      "tema_default": "cosmo",
+      "tamanho_janela_default": "1280x820"
+    },
+    "ocr": {
+      "engine": "Tesseract",
+      "lingua": "por",
+      "psm": 6,
+      "preprocessamento": "OpenCV (upscale 3x CUBIC, grayscale, CLAHE clip 3.0 tile 8x8, OTSU binarizacao)"
+    },
+    "imagem": "Pillow (PIL) + OpenCV (cv2) + numpy",
+    "pdf": "pypdfium2 (renderizacao pagina 1 a 2x scale)",
+    "heic": "pyheif (opcional, requer libheif-dev)",
+    "docx": "python-docx (leitura/escrita de paragrafos e tabelas)",
+    "odt": "zipfile + xml.etree.ElementTree nativos (ODT = ZIP com XML)",
+    "persistencia": "JSON em ~/.autodoc/ (sem banco de dados)",
+    "instalador": "makeself (gerador de .run autoextraivel) + zenity (wizard GUI)",
+    "dependencias_sistema": ["python3", "python3-pip", "python3-tk", "tesseract-ocr", "tesseract-ocr-por", "zenity", "makeself"],
+    "dependencias_pip": ["Pillow >= 10.0.0", "opencv-python >= 4.8.0", "pytesseract >= 0.3.10", "pypdfium2 >= 4.0.0", "python-docx >= 1.0.0", "ttkbootstrap >= 1.10.0", "customtkinter >= 5.2.0"],
+    "dependencias_opcionais": ["pyheif (via libheif-dev)"]
+  },
+
+  "estrutura": {
+    "raiz": [
+      {"arquivo": "run.py", "descricao": "Entry point tkinter. Define sys.path, cria ttkbootstrap.Window(tema='cosmo'), instancia AppDocumentos, inicia mainloop."},
+      {"arquivo": "run_ctk.py", "descricao": "Entry point CustomTkinter. Define sys.path, cria ctk.CTk(), instancia AppDocumentosCTK, inicia mainloop."},
+      {"arquivo": "requirements.txt", "descricao": "Dependencias pip: Pillow, opencv-python, pytesseract, pypdfium2, python-docx, ttkbootstrap, customtkinter"},
+      {"arquivo": "install_dependencies.sh", "descricao": "Instalador automatico de dependencias (apt + pip)"},
+      {"arquivo": "build_installer.sh", "descricao": "Gera instalador .run via makeself (versao tkinter)"},
+      {"arquivo": "build_installer_ctk.sh", "descricao": "Gera instalador .run via makeself (versao CustomTkinter)"},
+      {"arquivo": "install.sh", "descricao": "Instalador interno tkinter (wizard GUI com zenity, 5 passos)"},
+      {"arquivo": "install_ctk.sh", "descricao": "Instalador interno CustomTkinter (wizard GUI com zenity)"},
+      {"arquivo": "iniciar.sh", "descricao": "Launcher tkinter. Define PATH/PYTHONPATH, verifica python3, roda run.py"},
+      {"arquivo": "iniciar_ctk.sh", "descricao": "Launcher CustomTkinter. Define PATH/PYTHONPATH, verifica python3, roda run_ctk.py"},
+      {"arquivo": "desinstalar.sh", "descricao": "Desinstalador tkinter. Remove atalhos desktop, menu e diretorio de instalacao"},
+      {"arquivo": "desinstalar_ctk.sh", "descricao": "Desinstalador CustomTkinter"},
+      {"arquivo": "README.md", "descricao": "Documentacao bilingue (PT/EN): features, requisitos, quick start, atalhos, estrutura, changelog, contato"},
+      {"arquivo": "CHANGELOG.md", "descricao": "Historico de versoes 3.4 a 3.9 com added/changed/removed/fixed"},
+      {"arquivo": "SECURITY.md", "descricao": "Politica de seguranca: 100% offline, sem coleta de dados, sem nuvem, sem internet"},
+      {"arquivo": "LICENSE.txt", "descricao": "Licenca MIT"},
+      {"arquivo": ".editorconfig", "descricao": "Code style: indent_style=space, indent_size=4, end_of_line=lf, charset=utf-8"},
+      {"arquivo": ".gitattributes", "descricao": "Git rules: .py/.sh/.md/.txt/.json = text eol=lf; .odt/.docx/.png/.jpg/.pdf/.run = binary"},
+      {"arquivo": ".gitignore", "descricao": "Ignora: __pycache__/, *.pyc, *.pyo, *.run, .project_memory.json"},
+      {"arquivo": ".project_memory.json", "descricao": "ESTE ARQUIVO — memoria completa do projeto para IA"}
+    ],
+    "github": [
+      ".github/ISSUE_TEMPLATE/bug_report.md",
+      ".github/ISSUE_TEMPLATE/feature_request.md"
+    ],
+    "docs": ["docs/teste.png — Imagem de teste manual para OCR"],
+    "instalacao": {
+      "tkinter": {"dir": "/home/tony/autodoc", "desktop": "autodoc.desktop", "menu": "autodoc.desktop"},
+      "ctk": {"dir": "/home/tony/autodoc-ctk", "desktop": "autodoc-ctk.desktop", "menu": "autodoc-ctk.desktop"}
+    }
+  },
+
+  "modulos": {
+
+    "config.py": {
+      "linhas": "~81",
+      "funcao": "Constantes do app, paths, temas de cores, extensoes suportadas, configs OCR, criacao de diretorios de persistencia.",
+      "constantes": {
+        "VERSAO": "3.8",
+        "PASTA_APP": "~/.autodoc",
+        "MODELO_EXTENSOES": "{'.odt': 'ODT (LibreOffice)', '.docx': 'DOCX (Microsoft Word)'}",
+        "ANEXO_EXTENSOES": "{'.jpg': 'JPEG', '.jpeg': 'JPEG', '.png': 'PNG', '.tiff': 'TIFF', '.pdf': 'PDF', '.webp': 'WebP', '.heic': 'HEIC (iPhone)'}",
+        "TESSERACT_LANG": "por",
+        "TESSERACT_CONFIG": "--psm 6",
+        "OCR_RESIZE_FATOR": 3,
+        "OCR_CLIPLIMIT": 3.0,
+        "OCR_TILE_GRID": [8, 8],
+        "BACKUP_INTERVAL": 60000,
+        "MAX_HISTORY": 50,
+        "LIGHT_THEME": "{listbox_bg, listbox_fg, select_bg, select_fg, canvas_bg, text_bg, text_fg}",
+        "DARK_THEME": "{listbox_bg, listbox_fg, select_bg, select_fg, canvas_bg, text_bg, text_fg}",
+        "PASTA_MODELOS": "~/.autodoc/modelos",
+        "REGISTRO_MODELOS": "~/.autodoc/modelos/registros.json",
+        "LOG_FILE": "~/.autodoc/app.log",
+        "BACKUP_FILE": "~/.autodoc/backup.json",
+        "HISTORY_FILE": "~/.autodoc/historico.json",
+        "PREFS_FILE": "~/.autodoc/prefs.json"
+      },
+      "efeitos_colaterais": "Cria PASTA_APP e PASTA_MODELOS no import"
+    },
+
+    "validadores.py": {
+      "linhas": "~55",
+      "funcao": "Validacao de extensoes de arquivo e filetypes para filedialog.",
+      "funcoes": {
+        "validar_extensao(caminho, tipo='modelo')": "Retorna tuple(bool, ext, msg) — valida contra MODELO_EXTENSOES ou ANEXO_EXTENSOES",
+        "obter_filetypes_modelo()": "Retorna list de tuplas para file dialog de modelos",
+        "obter_filetypes_anexo()": "Retorna list de tuplas para file dialog de anexos"
+      }
+    },
+
+    "validadores_extra.py": {
+      "linhas": "~92",
+      "funcao": "Validacao de dados extraidos: CPF, data, email, telefone. Deteccao automatica por nome do placeholder.",
+      "funcoes": {
+        "validar_cpf(cpf_str)": "tuple(bool, msg) — Extrai digitos, checa tamanho 11, valida digitos verificadores, rejeita repeticoes",
+        "validar_data(data_str)": "tuple(bool, msg) — Testa 5 formatos (DD/MM/YYYY, DD-MM-YYYY, YYYY-MM-DD, DD MM YYYY, DD/MM/YY), range 1900-2100",
+        "validar_email(email_str)": "tuple(bool, msg) — Regex ^[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$",
+        "validar_telefone(tel_str)": "tuple(bool, msg) — Extrai digitos, minimo 8 digitos",
+        "sugerir_validacao(placeholder_lower)": "str|None — Detecta tipo por keywords: cpf, data/nascimento, email/mail, telefone/tel/fone/celular",
+        "validar_campo(placeholder, valor)": "tuple(bool, msg) — Sugere e roda validacao automatica"
+      }
+    },
+
+    "mensagens.py": {
+      "linhas": "~118",
+      "funcao": "Dialogos popup de usuario (messagebox info/error/warning/yesno).",
+      "funcoes": {
+        "mostrar_info_modelos()": "bool — Mostra formatos suportados, pergunta se quer continuar",
+        "mostrar_info_anexos(heic_disponivel=False)": "bool — Mostra formatos de anexo suportados",
+        "mostrar_erro_formato(ext, tipo='modelo')": "Mostra erro de formato nao suportado",
+        "mostrar_aviso_sem_modelo()": "Mostra aviso 'Carregue um modelo primeiro'",
+        "mostrar_aviso_sem_placeholders()": "Mostra aviso 'Desenhe um retangulo primeiro'",
+        "mostrar_aviso_sem_extracao()": "Mostra aviso 'Extraia dados primeiro'",
+        "mostrar_sucesso_geracao(caminho)": "Mostra sucesso 'Documento gerado em: caminho'",
+        "mostrar_info_modelos_salvos()": "bool — Info sobre biblioteca de modelos",
+        "mostrar_modelo_salvo_sucesso(nome)": "Mostra sucesso 'Modelo salvo na biblioteca'",
+        "mostrar_modelo_ja_salvo(nome)": "Mostra aviso 'Modelo ja esta na biblioteca'"
+      }
+    },
+
+    "i18n.py": {
+      "linhas": "~42",
+      "funcao": "Internacionalizacao. Dicionario TEXTO com 25+ strings em portugues. Preparado para multi-idioma.",
+      "dados": "TEXTO = {{'pt': {chave: valor}}} com 25+ chaves de UI",
+      "funcoes": {
+        "get_texto(chave, idioma='pt')": "str — Retorna string localizada por chave e idioma"
+      }
+    },
+
+    "logger.py": {
+      "linhas": "~63",
+      "funcao": "Logging em arquivo (~/.autodoc/app.log). Singleton via variavel de modulo LOGGER.",
+      "dados": "LOGGER = None (module-level singleton)",
+      "funcoes": {
+        "_criar_logger()": "Logger — Cria/retorna singleton file logger com encoding UTF-8",
+        "get_logger()": "Logger — Retorna logger global",
+        "log_info(msg)": "Loga info",
+        "log_erro(msg)": "Loga erro",
+        "log_warning(msg)": "Loga warning",
+        "log_debug(msg)": "Loga debug"
+      }
+    },
+
+    "preferencias.py": {
+      "linhas": "~49",
+      "funcao": "Persistencia de preferencias de usuario em JSON.",
+      "constantes": {
+        "PREFS_PATH": "~/.autodoc/prefs.json",
+        "DEFAULTS": "{tema:'cosmo', tamanho_janela:'1280x820', ultimo_diretorio_modelo:'~', ultimo_diretorio_anexo:'~', ultimo_diretorio_saida:'~', idioma:'pt', confirmacoes_ativadas:True}"
+      },
+      "funcoes": {
+        "carregar_preferencias()": "dict — Carrega prefs, merge com DEFAULTS",
+        "salvar_preferencias(prefs)": "Escreve prefs JSON",
+        "get_preferencia(chave)": "Retorna valor de uma preferencia",
+        "set_preferencia(chave, valor)": "Define e salva uma preferencia"
+      }
+    },
+
+    "historico.py": {
+      "linhas": "~48",
+      "funcao": "Historico de documentos gerados. Max 50 entradas, FIFO.",
+      "constantes": {
+        "HISTORY_PATH": "~/.autodoc/historico.json",
+        "MAX_ENTRIES": 50
+      },
+      "estrutura_entrada": "{data: ISO timestamp, modelo: nome arquivo, tipo_modelo: odt|docx, saida: caminho output, num_campos_preenchidos: int}",
+      "funcoes": {
+        "carregar_historico()": "list — Carrega historico JSON",
+        "salvar_historico(historico)": "Salva historico truncado a MAX_ENTRIES",
+        "adicionar_ao_historico(modelo_path, tipo_modelo, saida_path, num_campos)": "Adiciona entrada",
+        "listar_historico()": "list — Retorna ordenado por data desc"
+      }
+    },
+
+    "ocr.py": {
+      "linhas": "~99",
+      "funcao": "Engine de OCR com Tesseract + pre-processamento OpenCV.",
+      "imports": "cv2, numpy, pytesseract, PIL.Image, config (OCR_RESIZE_FATOR, OCR_CLIPLIMIT, OCR_TILE_GRID, TESSERACT_LANG, TESSERACT_CONFIG)",
+      "pipeline": "1. PIL -> OpenCV BGR, 2. Upscale 3x (CUBIC), 3. Grayscale, 4. CLAHE (clip 3.0, tile 8x8), 5. OTSU binarizacao, 6. Tesseract psm 6",
+      "funcoes": {
+        "preprocessar_imagem(imagem_pil)": "numpy.ndarray — Pipeline completo de pre-processamento",
+        "extrair_texto_da_regiao(imagem_pil)": "str — Preprocess + Tesseract + strip + colapso newlines",
+        "extrair_texto_do_recorte(imagem_original, coordenadas)": "str — Crop {x1,y1,x2,y2} + extrair_texto_da_regiao"
+      }
+    },
+
+    "anexo_pdf.py": {
+      "linhas": "~56",
+      "funcao": "Conversao PDF -> imagem PIL via pypdfium2.",
+      "constantes": {"PDF_SUPORTADO": "bool — True se pypdfium2 importado"},
+      "funcoes": {
+        "pdf_para_imagem(caminho_pdf)": "PIL.Image — Renderiza pagina 1 a scale=2 (~150 DPI)",
+        "pdf_suportado()": "bool — Retorna flag de disponibilidade"
+      }
+    },
+
+    "anexo_heic.py": {
+      "linhas": "~53",
+      "funcao": "Conversao HEIC (fotos iPhone) -> imagem PIL via pyheif.",
+      "constantes": {"HEIC_SUPORTADO": "bool — True se pyheif importado"},
+      "funcoes": {
+        "heic_para_imagem(caminho_heic)": "PIL.Image — Converte HEIC para PIL",
+        "heic_suportado()": "bool — Retorna flag de disponibilidade"
+      }
+    },
+
+    "modelo_odt.py": {
+      "linhas": "~74",
+      "funcao": "Parse e geracao de documentos ODT (ZIP com content.xml).",
+      "imports": "re, zipfile, xml.etree.ElementTree, shutil, tempfile, os",
+      "funcoes": {
+        "extrair_placeholders_odt(caminho_odt)": "set — Abre ODT como ZIP, parseia content.xml com regex {{...}}",
+        "gerar_odt_preenchido(caminho_modelo, dados, caminho_saida)": "Copia template, substitui {{placeholder}} por valor no content.xml, re-zipa"
+      }
+    },
+
+    "modelo_docx.py": {
+      "linhas": "~82",
+      "funcao": "Parse e geracao de documentos DOCX via python-docx.",
+      "imports": "re, os, Document (python-docx opcional)",
+      "constantes": {"DOCX_SUPORTADO": "bool — True se python-docx importado"},
+      "funcoes": {
+        "extrair_placeholders_docx(caminho_docx)": "set — Parseia paragrafos e tabelas por {{...}}",
+        "gerar_docx_preenchido(caminho_modelo, dados, caminho_saida)": "Substitui {{placeholder}} em paragrafos e celulas de tabela, salva",
+        "docx_suportado()": "bool — Verifica se python-docx esta disponivel"
+      }
+    },
+
+    "modelos_salvos.py": {
+      "linhas": "~93",
+      "funcao": "Biblioteca de templates salvos com persistencia JSON.",
+      "persistencia": "Arquivos copiados para ~/.autodoc/modelos/ com prefixo UUID. Metadados em registros.json",
+      "estrutura_registro": "{id: UUID, nome_original: str, arquivo_salvo: str, tipo: odt|docx, placeholders: list, data_adicao: ISO timestamp}",
+      "funcoes": {
+        "_carregar_registros()": "list — Carrega registros JSON",
+        "_salvar_registros(modelos)": "Escreve registros JSON",
+        "listar_modelos()": "list — Retorna ordenado por data_adicao desc",
+        "salvar_modelo(caminho_original, tipo, placeholders)": "tuple(bool, msg) — Copia arquivo com UUID, registra, previne duplicatas",
+        "remover_modelo(modelo_id)": "tuple(bool, msg) — Deleta arquivo e registro",
+        "carregar_modelo(modelo_id)": "tuple(path, tipo, placeholders) — Retorna dados do modelo salvo"
+      }
+    },
+
+    "interface.py": {
+      "linhas": "~1877",
+      "classe": "AppDocumentos",
+      "framework": "tkinter + ttkbootstrap",
+      "funcao": "GUI completa com 5 abas, gerenciamento de estado, canvas com desenho de retangulos, zoom/pan, undo/redo, backup, atalhos.",
+      "estado_inicial": {
+        "tema_atual": "cosmo",
+        "cores": "LIGHT_THEME",
+        "modelo_path": "str|None",
+        "modelo_tipo": "odt|docx|None",
+        "placeholders": "list[str]",
+        "documentos_anexados": "list[{caminho, nome, tipo, imagem_original}]",
+        "mapeamento": "dict[str, {documento_path, documento_tipo, x1, y1, x2, y2}]",
+        "lote_fontes": "list[{documento_path, documento_tipo, mapeamento: {placeholder: {x1,y1,x2,y2}}}]",
+        "modelos": "list[{path, tipo, placeholders}]",
+        "placeholders_por_modelo": "dict[str, set] — tracking de quais placeholders pertencem a cada modelo",
+        "placeholder_atual": "str|None",
+        "documento_atual_path": "str|None",
+        "imagem_atual": "PIL.Image|None",
+        "imagem_exibida": "PIL.Image|None",
+        "imagem_exibida_img": "PIL.ImageTk.PhotoImage|None",
+        "retangulo_atual": "int|None (canvas id)",
+        "inicio_x": "int|None",
+        "inicio_y": "int|None",
+        "retangulos_temp": "list[{placeholder, documento_path, documento_tipo, x1, y1, x2, y2}]",
+        "dados_extraidos": "dict[str, str] — dados finais para geracao",
+        "zoom_level": "float 0.2-5.0",
+        "pan_offset_x": "int",
+        "pan_offset_y": "int",
+        "is_panning": "bool",
+        "undo_stack": "list[{action: add|update|remove, placeholder, old_data}]",
+        "redo_stack": "list[{action: add|update|remove, placeholder, old_data}]"
+      },
+      "abas": [
+        {
+          "nome": "Modelo",
+          "widgets": "Label titulo, LabelFrame instrucoes, LabelFrame formatos, btn 'Carregar Modelo', btn 'Anexar Individualmente', btn 'Anexar Varios', LabelFrame 'Modelos Carregados' (tabela com nome/tipo/placeholders/btn remover), LabelFrame 'Placeholders Encontrados' (Listbox), btn 'Salvar na Biblioteca', Label status",
+          "metodos_chave": ["criar_aba_modelo", "carregar_modelo", "_anexar_modelo_individual", "_anexar_varios_modelos", "_adicionar_modelo_ao_lote", "_atualizar_placeholders_unificados", "_atualizar_lista_modelos_carregados", "_remover_modelo_do_lote", "salvar_modelo_atual"]
+        },
+        {
+          "nome": "Modelos Salvos",
+          "widgets": "Treeview com colunas nome/tipo/placeholders/data, btn 'Usar Selecionado', btn 'Remover', Label status",
+          "metodos_chave": ["criar_aba_modelos_salvos", "atualizar_lista_modelos_salvos", "usar_modelo_salvo", "remover_modelo_salvo"]
+        },
+        {
+          "nome": "Anexar e Mapear",
+          "widgets": "btn frame: 'Anexar Documento', 'Limpar Mapeamento', 'Limpar Lote', 'Remover Documento' (esquerda) + 'Exportar', 'Importar', 'Desfazer' (direita), texto instrucoes, LabelFrame 'Placeholders' (Listbox), LabelFrame 'Documentos' (Listbox), Label status (placeholder/doc/zoom), Canvas CTk Canvas, btn 'SALVAR MAPEAMENTO', LabelFrame 'Mapeamentos' (Listbox), Label status",
+          "metodos_chave": ["criar_aba_anexos", "atualizar_lista_placeholders_aba2", "atualizar_lista_documentos", "selecionar_placeholder_aba2", "selecionar_documento_aba2", "carregar_imagem_para_mapeamento", "_redesenhar_retangulos_no_canvas", "anexar_documento", "remover_documento", "iniciar_retangulo", "desenhar_retangulo", "finalizar_retangulo", "salvar_mapeamento", "_sincronizar_lote_fontes", "atualizar_lista_mapeamentos", "_atualizar_status_documento_lote", "limpar_mapeamento", "_limpar_lote_fontes"]
+        },
+        {
+          "nome": "Gerar Documento",
+          "widgets": "Label titulo, LabelFrame 'Dados Extraidos' (Text widget preview), btn 'Extrair e Editar Dados', btn 'Preencher Manualmente', btn 'Gerar Documento' (UNICO botao para todos os cenarios), Label status",
+          "metodos_chave": ["criar_aba_gerar", "extrair_e_editar_dados", "preencher_manualmente", "abrir_janela_edicao", "salvar_dados_editados", "_gerar_documento_unificado", "_gerar_um_documento", "_extrair_dados_da_fonte", "gerar_documento_preenchido (delegate)", "_processar_em_lote (delegate)", "_processar_lote_fontes (delegate)"]
+        },
+        {
+          "nome": "Historico",
+          "widgets": "Label titulo, btn 'Atualizar', Canvas + Scrollbar com Frame interno (tabela com Data/Modelo/Campos/Saida), Label status",
+          "metodos_chave": ["criar_aba_historico", "atualizar_tabela_historico"]
+        }
+      ],
+      "atalhos": {
+        "Ctrl+O": "carregar_modelo",
+        "Ctrl+A": "anexar_documento",
+        "Ctrl+G": "_gerar_documento_unificado",
+        "Ctrl+S": "salvar_mapeamento",
+        "Ctrl+Z": "_desfazer_retangulo",
+        "Ctrl+Shift+Z": "_refazer_retangulo",
+        "Ctrl+D": "_alternar_tema",
+        "Ctrl+E": "_exportar_mapeamento",
+        "Ctrl+I": "_importar_mapeamento",
+        "Delete": "_remover_retangulo_selecionado",
+        "Ctrl+Scroll": "zoom (0.2x-5.0x, LANCZOS)",
+        "Botao Meio + Arrastar": "pan"
+      },
+      "metodos_export_import": {
+        "_exportar_mapeamento": "Salva {modelo_path, modelo_tipo, placeholders, mapeamento, lote_fontes, modelos} em JSON",
+        "_importar_mapeamento": "Carrega JSON e restaura todos os campos"
+      },
+      "metodos_backup": {
+        "_iniciar_backup": "Tenta restaurar backup antigo, inicia ciclo de backup periodico",
+        "_executar_backup": "Salva estado completo em ~/.autodoc/backup.json a cada 60s",
+        "_tentar_restaurar_backup": "Pergunta se quer restaurar backup encontrado no inicio"
+      },
+      "metodos_extras": ["_restaurar_preferencias", "_ao_fechar", "_mostrar_sobre"]
+    },
+
+    "interface_ctk.py": {
+      "linhas": "~1901",
+      "classe": "AppDocumentosCTK",
+      "framework": "CustomTkinter (ctk)",
+      "funcao": "MESMA logica de negocios que interface.py, mas com visual moderno CustomTkinter. CTkScrollableFrame para listas, CTkCanvas para desenho, CTkToplevel para edicao. CTkTabview com 5 abas. Temas Light/Dark nativos via set_appearance_mode().",
+      "diferencas_visuais": "Usa grid layout, fontes maiores (Helvetica 18 bold titulos), corner_radius=10, border_width=1, cores azul/verde/roxo para botoes. Scrollframes substituem Listbox.",
+      "estado_adicional": {
+        "documento_tipo": "str|None",
+        "placeholder_items_ctk": "dict — mapeia caminho -> widget label",
+        "documento_items_ctk": "dict — mapeia caminho -> widget label",
+        "modelo_table_rows": "list",
+        "modelo_selecionado_id": "str|None"
+      },
+      "convencao_nomes": "Metodos CTk tem prefixo '_' (ex: _criar_abas vs criar_abas, _atualizar_lista_ph_mapeamento vs atualizar_lista_placeholders_aba2)",
+      "abas": [
+        {"nome": "Modelo", "widgets": "CTkScrollableFrame para placeholders, CTkButton para carregar/anexar, tabela customizada para modelos carregados"},
+        {"nome": "Modelos Salvos", "widgets": "Tabela customizada com CTkScrollableFrame + headers/rows + botoes"},
+        {"nome": "Anexar e Mapear", "widgets": "CTkScrollableFrame para placeholders/docs, CTkCanvas para desenho, CTkButton, CTkScrollableFrame para lista de mapeamentos"},
+        {"nome": "Gerar Documento", "widgets": "CTkTextbox para preview, CTkButton para extrair/preencher/gerar"},
+        {"nome": "Historico", "widgets": "CTkScrollableFrame com cards de historico"}
+      ],
+      "metodos_chave_ctk": ["_selecionar_placeholder_ctk", "_selecionar_documento_ctk", "_selecionar_linha_modelo", "_atualizar_tabela_modelos_salvos", "_atualizar_lista_documentos", "_atualizar_lista_mapeamentos", "_atualizar_tabela_historico"]
+    }
+  },
+
+  "fluxo_de_dados": [
+    "1. Usuario carrega/anexa modelo(s) ODT/DOCX com {{placeholders}}",
+    "2. App extrai e unifica os placeholders de todos os modelos carregados",
+    "3. Usuario anexa documentos fonte (JPG/PNG/PDF/HEIC) OU preenche placeholders manualmente",
+    "4. Usuario desenha retangulos no canvas sobre as regioes de interesse (OCR)",
+    "5. Cada retangulo armazena documento_path, documento_tipo e coordenadas normalizadas",
+    "6. salvar_mapeamento sincroniza com self.mapeamento E self.lote_fontes",
+    "7. OCR (Tesseract + OpenCV) extrai texto de cada regiao mapeada",
+    "8. Pop-up de revisao permite editar e validar os dados extraidos (CPF, data, email, telefone)",
+    "9. _gerar_documento_unificado decide o modo: 1 modelo, N modelos, 1 fonte, N fontes",
+    "10. Para cada modelo, filtra dados_extraidos para incluir apenas seus placeholders",
+    "11. App substitui {{placeholders}} no template pelos dados finais e salva documento preenchido",
+    "12. Nome do arquivo de saida mantem o nome original do modelo",
+    "13. Registro adicionado ao historico"
+  ],
+
+  "recursos_principais": [
+    "Multiplos modelos: botoes 'Anexar Individualmente' e 'Anexar Varios' na aba Modelo",
+    "Placeholders unificados: placeholders iguais entre modelos sao mesclados automaticamente; placeholders unicos de cada modelo tambem aparecem",
+    "Lote de fontes: mapeia placeholders em varios documentos fonte, uma saida por fonte",
+    "Geracao unificada: um unico botao 'Gerar Documento' (Ctrl+G) cobre todos os cenarios (1/N modelos x 1/N fontes)",
+    "Preenchimento manual de placeholders (digitacao direta, sem OCR ou documentos anexados)",
+    "OCR com pre-processamento OpenCV (upscale 3x, CLAHE, OTSU)",
+    "Mapeamento visual com desenho de retangulos no canvas + coordenadas normalizadas",
+    "Zoom (Ctrl+Scroll, 0.2x-5.0x, LANCZOS) e Pan (botao meio + arrastar)",
+    "Undo/Redo de retangulos de mapeamento",
+    "Biblioteca de modelos salvos (UUID + JSON, previne duplicatas)",
+    "Modo escuro/claro (Ctrl+D) com persistencia de tema",
+    "Validacao automatica de CPF, data, email e telefone com deteccao heuristica por nome do placeholder",
+    "Backup automatico a cada 60 segundos com restauracao na inicializacao (inclui modelos e lote_fontes)",
+    "Export/Import de mapeamentos como JSON (inclui modelos e lote_fontes)",
+    "Historico dos ultimos 50 documentos gerados (FIFO)",
+    "Suporte a PDF (pypdfium2), HEIC (pyheif opcional), e imagens comuns",
+    "Instalador .run autoextraivel via makeself + zenity (wizard GUI com 5 passos)",
+    "100% offline — sem nuvem, sem internet, sem telemetria, documentos ficam na maquina local"
+  ],
+
+  "persistencia": {
+    "diretorio": "~/.autodoc/",
+    "arquivos": {
+      "prefs.json": "Preferencias do usuario: tema, tamanho_janela, ultimo_diretorio_modelo/anexo/saida, idioma, confirmacoes_ativadas",
+      "historico.json": "Historico de geracao: [{data, modelo, tipo_modelo, saida, num_campos_preenchidos}], max 50 entradas FIFO",
+      "backup.json": "Backup automatico do estado completo: {modelo_path, modelo_tipo, placeholders, mapeamento, lote_fontes, modelos}. Escrito a cada 60s.",
+      "modelos/registros.json": "Metadados dos templates salvos: [{id, nome_original, arquivo_salvo, tipo, placeholders, data_adicao}]",
+      "modelos/{uuid}_*": "Copias fisicas dos templates salvos com nome prefixado por UUID",
+      "app.log": "Log da aplicacao: DEBUG level, UTF-8, file handler"
+    }
+  },
+
+  "testes": {
+    "existente": "docs/teste.png para teste manual de OCR",
+    "frameworks": "Nenhum framework de teste automatizado configurado (pytest, unittest, etc.)",
+    "comando_teste": "Nao ha comando de teste definido"
+  },
+
+  "bugs_conhecidos_e_corrigidos": {
+    "v3.9_bug_documento_tipo": {
+      "descricao": "self.documento_tipo era lido de variavel de instancia volatil em salvar_mapeamento, causando tipo errado quando usuario alternava entre documentos de tipos diferentes",
+      "correcao": "documento_tipo agora armazenado no dict retangulos_temp dentro de finalizar_retangulo, e lido de la em salvar_mapeamento e _sincronizar_lote_fontes",
+      "arquivos_afetados": "interface.py, interface_ctk.py (finalizar_retangulo + salvar_mapeamento)"
+    }
+  }
+}
