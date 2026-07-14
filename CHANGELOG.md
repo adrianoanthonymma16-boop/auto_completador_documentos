@@ -2,6 +2,37 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.9.0] - 2026-07-14
+
+### Added
+- **Múltiplos modelos** — Botões "Anexar Individualmente" e "Anexar Vários" na aba Modelo
+- **Placeholders unificados** — Placeholders iguais entre modelos são mesclados automaticamente
+- **Lote de fontes** — Estrutura `self.lote_fontes` para mapear placeholders em vários documentos-fonte
+- **Geração unificada** — Único botão "Gerar Documento" (Ctrl+G) cobre todos os cenários
+- **Lista de modelos carregados** — Exibe modelos, placeholders e botão remover
+- **Backup/Restore e Export/Import** — Incluem `modelos` e `lote_fontes`
+
+### Fixed
+- **Bug: `documento_tipo`** — Agora armazenado por retângulo (`finalizar_retangulo`), corrigindo OCR com múltiplos tipos de documento anexados
+
+### Removed
+- Botão "Gerar Documento Preenchido", "Gerar em Lote (Modelos)" e "Gerar Lote de Documentos" substituídos por um único "Gerar Documento"
+
+## [3.8.0] - 2026-07-13
+
+### Added
+- Interface CustomTkinter com visual moderno (`interface_ctk.py`, `run_ctk.py`)
+- CTkScrollableFrame para listas, CTkCanvas para desenho
+- Temas Light/Dark nativos via `set_appearance_mode()`
+- Instalador duplo — ambas interfaces podem coexistir (ttkbootstrap + CustomTkinter)
+- Preenchimento manual de placeholders (digitação direta sem OCR)
+
+## [3.7.0] - 2026-07-02
+
+### Added
+- Preenchimento manual de placeholders (botão na aba Gerar)
+- Correções nos instaladores
+
 ## [3.6.0] - 2026-07-02
 
 ### Added
