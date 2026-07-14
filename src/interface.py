@@ -58,6 +58,8 @@ class AppDocumentos:
         self.documentos_anexados = []
         self.mapeamento = {}
         self.lote_fontes = []
+        self.modelos = []
+        self.placeholders_por_modelo = {}
         self.placeholder_atual = None
         self.documento_atual_path = None
         self.imagem_atual = None
@@ -150,8 +152,8 @@ class AppDocumentos:
         self.root.bind_all('<Control-O>', lambda e: self.carregar_modelo())
         self.root.bind_all('<Control-a>', lambda e: self.anexar_documento())
         self.root.bind_all('<Control-A>', lambda e: self.anexar_documento())
-        self.root.bind_all('<Control-g>', lambda e: self.gerar_documento_preenchido())
-        self.root.bind_all('<Control-G>', lambda e: self.gerar_documento_preenchido())
+        self.root.bind_all('<Control-g>', lambda e: self._gerar_documento_unificado())
+        self.root.bind_all('<Control-G>', lambda e: self._gerar_documento_unificado())
         self.root.bind_all('<Control-s>', lambda e: self.salvar_mapeamento())
         self.root.bind_all('<Control-S>', lambda e: self.salvar_mapeamento())
         self.root.bind_all('<Control-z>', lambda e: self._desfazer_retangulo())
@@ -299,6 +301,20 @@ class AppDocumentos:
                                   bootstyle="success", padding=(30, 12))
         btn_carregar.pack(pady=10)
 
+        frame_botoes_modelo = ttk.Frame(frame)
+        frame_botoes_modelo.pack(pady=5)
+
+        ttk.Button(frame_botoes_modelo, text="📎 Anexar Individualmente",
+                   command=self._anexar_modelo_individual,
+                   bootstyle="info", padding=(15, 8)).pack(side=tk.LEFT, padx=5)
+
+        ttk.Button(frame_botoes_modelo, text="📎 Anexar Vários",
+                   command=self._anexar_varios_modelos,
+                   bootstyle="info", padding=(15, 8)).pack(side=tk.LEFT, padx=5)
+
+        self.frame_modelos_carregados = ttk.LabelFrame(frame, text=" Modelos Carregados ")
+        self._atualizar_lista_modelos_carregados()
+
         self.frame_placeholders = ttk.LabelFrame(frame, text=" Placeholders Encontrados ")
         self.frame_placeholders.pack(fill=tk.BOTH, expand=True, padx=25, pady=5)
 
@@ -367,6 +383,8 @@ class AppDocumentos:
                 self.modelo_tipo = 'docx'
 
             if placeholders:
+                self.modelos = []
+                self.placeholders_por_modelo = {}
                 self.placeholders = sorted(list(placeholders))
                 self.modelo_path = caminho
 
@@ -395,6 +413,138 @@ class AppDocumentos:
         except Exception as e:
             log_erro(f"Erro ao carregar modelo: {str(e)}")
             messagebox.showerror("Erro", f"Falha: {str(e)}")
+
+    def _anexar_modelo_individual(self):
+        prefs = carregar_preferencias()
+        dir_inicial = prefs.get('ultimo_diretorio_modelo', os.path.expanduser("~"))
+
+        caminho = filedialog.askopenfilename(
+            title="Selecione o modelo para anexar (ODT ou DOCX)",
+            filetypes=obter_filetypes_modelo(),
+            initialdir=dir_inicial
+        )
+        if not caminho:
+            return
+        self._adicionar_modelo_ao_lote(caminho)
+
+    def _anexar_varios_modelos(self):
+        prefs = carregar_preferencias()
+        dir_inicial = prefs.get('ultimo_diretorio_modelo', os.path.expanduser("~"))
+
+        caminhos = filedialog.askopenfilenames(
+            title="Selecione os modelos para anexar (ODT ou DOCX)",
+            filetypes=obter_filetypes_modelo(),
+            initialdir=dir_inicial
+        )
+        if not caminhos:
+            return
+        for caminho in caminhos:
+            self._adicionar_modelo_ao_lote(caminho)
+
+    def _adicionar_modelo_ao_lote(self, caminho):
+        valido, ext, msg = validar_extensao(caminho, 'modelo')
+        if not valido:
+            return
+
+        for m in self.modelos:
+            if m['path'] == caminho:
+                return
+
+        try:
+            if ext == '.odt':
+                placeholders = list(extrair_placeholders_odt(caminho))
+                tipo = 'odt'
+            elif ext == '.docx':
+                if not docx_suportado():
+                    return
+                placeholders = list(extrair_placeholders_docx(caminho))
+                tipo = 'docx'
+            else:
+                return
+
+            if not placeholders:
+                return
+
+            self.modelos.append({
+                'path': caminho,
+                'tipo': tipo,
+                'placeholders': placeholders
+            })
+
+            if not self.modelo_path:
+                self.modelo_path = caminho
+                self.modelo_tipo = tipo
+
+            self._atualizar_placeholders_unificados()
+            self._atualizar_lista_modelos_carregados()
+            self.atualizar_lista_placeholders_aba2()
+            self.status_anexos.config(text=f"{len(self.modelos)} modelo(s) carregado(s). Anexe documentos para mapear.")
+
+            log_info(f"Modelo anexado ao lote: {os.path.basename(caminho)} ({len(placeholders)} placeholders)")
+
+        except Exception as e:
+            log_erro(f"Erro ao anexar modelo: {str(e)}")
+
+    def _atualizar_placeholders_unificados(self):
+        all_phs = set()
+        self.placeholders_por_modelo = {}
+
+        for m in self.modelos:
+            phs = set(m['placeholders'])
+            all_phs.update(phs)
+            self.placeholders_por_modelo[m['path']] = phs
+
+        self.placeholders = sorted(list(all_phs))
+
+        self.lista_placeholders.delete(0, tk.END)
+        for ph in self.placeholders:
+            self.lista_placeholders.insert(tk.END, ph)
+
+        if self.modelos:
+            self.status_modelo.config(
+                text=f"{len(self.modelos)} modelo(s) carregado(s). {len(self.placeholders)} placeholders unicos."
+            )
+
+    def _atualizar_lista_modelos_carregados(self):
+        if hasattr(self, 'frame_modelos_carregados'):
+            self.frame_modelos_carregados.pack_forget()
+
+        if not self.modelos:
+            return
+
+        self.frame_modelos_carregados.pack(fill=tk.X, padx=25, pady=5)
+
+        for widget in self.frame_modelos_carregados.winfo_children():
+            widget.destroy()
+
+        col_header = ttk.Frame(self.frame_modelos_carregados)
+        col_header.pack(fill=tk.X, padx=5, pady=2)
+        ttk.Label(col_header, text="Modelo", font=("Helvetica", 10, "bold"), width=40, anchor=tk.W).pack(side=tk.LEFT, padx=5)
+        ttk.Label(col_header, text="Tipo", font=("Helvetica", 10, "bold"), width=8).pack(side=tk.LEFT, padx=5)
+        ttk.Label(col_header, text="Placeholders", font=("Helvetica", 10, "bold"), width=30, anchor=tk.W).pack(side=tk.LEFT, padx=5)
+
+        for i, m in enumerate(self.modelos):
+            row = ttk.Frame(self.frame_modelos_carregados)
+            row.pack(fill=tk.X, padx=5, pady=1)
+            ttk.Label(row, text=os.path.basename(m['path']), width=40, anchor=tk.W).pack(side=tk.LEFT, padx=5)
+            ttk.Label(row, text=m['tipo'].upper(), width=8).pack(side=tk.LEFT, padx=5)
+            ttk.Label(row, text=", ".join(m['placeholders']), width=30, anchor=tk.W).pack(side=tk.LEFT, padx=5)
+            ttk.Button(row, text="✕", width=3,
+                       command=lambda idx=i: self._remover_modelo_do_lote(idx)).pack(side=tk.RIGHT, padx=3)
+
+    def _remover_modelo_do_lote(self, idx):
+        if 0 <= idx < len(self.modelos):
+            removido = self.modelos.pop(idx)
+            self._atualizar_placeholders_unificados()
+            if self.modelos:
+                self.modelo_path = self.modelos[0]['path']
+                self.modelo_tipo = self.modelos[0]['tipo']
+            else:
+                self.modelo_path = None
+                self.modelo_tipo = None
+            self._atualizar_lista_modelos_carregados()
+            self.atualizar_lista_placeholders_aba2()
+            self.atualizar_lista_mapeamentos()
 
     def salvar_modelo_atual(self):
         if not self.modelo_path or not self.placeholders:
@@ -1129,7 +1279,8 @@ class AppDocumentos:
             'modelo_tipo': self.modelo_tipo,
             'placeholders': self.placeholders,
             'mapeamento': {},
-            'lote_fontes': self.lote_fontes
+            'lote_fontes': self.lote_fontes,
+            'modelos': self.modelos
         }
         for ph, dados in self.mapeamento.items():
             export['mapeamento'][ph] = {
@@ -1179,6 +1330,11 @@ class AppDocumentos:
                 }
 
             self.lote_fontes = data.get('lote_fontes', [])
+            self.modelos = data.get('modelos', [])
+            self.placeholders_por_modelo = {}
+            for m in self.modelos:
+                self.placeholders_por_modelo[m['path']] = set(m['placeholders'])
+            self._atualizar_lista_modelos_carregados()
 
             self.undo_stack.clear()
             self.redo_stack.clear()
@@ -1229,17 +1385,9 @@ class AppDocumentos:
                    command=self.preencher_manualmente,
                    bootstyle="info", padding=(25, 12)).pack(side=tk.LEFT, padx=10)
 
-        ttk.Button(frame_botoes_gerar, text="📄 Gerar Documento Preenchido  [Ctrl+G]",
-                   command=self.gerar_documento_preenchido,
+        ttk.Button(frame_botoes_gerar, text="📄 Gerar Documento  [Ctrl+G]",
+                   command=self._gerar_documento_unificado,
                    bootstyle="success", padding=(25, 12)).pack(side=tk.LEFT, padx=10)
-
-        ttk.Button(frame_botoes_gerar, text="📚 Gerar em Lote (Modelos)",
-                   command=self._processar_em_lote,
-                   bootstyle="warning", padding=(25, 12)).pack(side=tk.LEFT, padx=10)
-
-        ttk.Button(frame_botoes_gerar, text="📦 Gerar Lote de Documentos",
-                   command=self._processar_lote_fontes,
-                   bootstyle="primary", padding=(25, 12)).pack(side=tk.LEFT, padx=10)
 
         self.status_gerar = ttk.Label(frame, text="Aguardando extracao de dados...",
                                        bootstyle="secondary", anchor=tk.W,
@@ -1388,179 +1536,133 @@ class AppDocumentos:
         for placeholder, valor in self.dados_extraidos.items():
             self.text_preview.insert(tk.END, f"📌 {placeholder}:\n   {valor}\n\n")
 
-        self.status_gerar.config(text="Dados editados! Clique em 'Gerar Documento Preenchido'  [Ctrl+G]")
+        self.status_gerar.config(text="Dados editados! Clique em 'Gerar Documento'  [Ctrl+G]")
         self.notebook.select(self.aba_gerar)
         log_info("Dados extraidos e editados")
 
-    def gerar_documento_preenchido(self):
+    def _gerar_documento_unificado(self):
         if not self.dados_extraidos:
             messagebox.showwarning("Aviso", "Extraia e edite os dados primeiro!")
             return
 
-        if not self.modelo_path:
+        if not self.modelo_path and not self.modelos:
             mostrar_aviso_sem_modelo()
             return
 
-        prefs = carregar_preferencias()
-        dir_inicial = prefs.get('ultimo_diretorio_saida', os.path.expanduser("~"))
+        modelos_para_gerar = self.modelos if self.modelos else [
+            {'path': self.modelo_path, 'tipo': self.modelo_tipo, 'placeholders': self.placeholders}
+        ]
 
-        ext_saida = ".odt" if self.modelo_tipo == 'odt' else ".docx"
-        save_path = filedialog.asksaveasfilename(
-            defaultextension=ext_saida,
-            filetypes=[(ext_saida.upper().replace('.', ''), f"*{ext_saida}")],
-            initialfile=f"documento_preenchido{ext_saida}",
-            initialdir=dir_inicial
-        )
+        tem_lote_fontes = bool(self.lote_fontes)
 
-        if not save_path:
-            return
-
-        set_preferencia('ultimo_diretorio_saida', os.path.dirname(save_path))
-
-        try:
-            if self.modelo_tipo == 'odt':
-                gerar_odt_preenchido(self.modelo_path, self.dados_extraidos, save_path)
-            else:
-                if not docx_suportado():
-                    raise Exception("DOCX nao suportado")
-                gerar_docx_preenchido(self.modelo_path, self.dados_extraidos, save_path)
-
-            mostrar_sucesso_geracao(save_path)
-            self.status_gerar.config(text=f"Documento salvo: {os.path.basename(save_path)}")
-            adicionar_ao_historico(self.modelo_path, self.modelo_tipo,
-                                   save_path, len(self.dados_extraidos))
+        if len(modelos_para_gerar) == 1 and not tem_lote_fontes:
+            m = modelos_para_gerar[0]
+            dados_modelo = {ph: self.dados_extraidos.get(ph, "") for ph in m['placeholders']}
+            ext = os.path.splitext(m['path'])[1]
+            save_path = filedialog.asksaveasfilename(
+                defaultextension=ext,
+                filetypes=[(ext.upper().replace('.', ''), f"*{ext}")],
+                initialfile=os.path.basename(m['path']),
+                initialdir=carregar_preferencias().get('ultimo_diretorio_saida', os.path.expanduser("~"))
+            )
+            if not save_path:
+                return
+            set_preferencia('ultimo_diretorio_saida', os.path.dirname(save_path))
+            try:
+                self._gerar_um_documento(m['path'], m['tipo'], dados_modelo, save_path)
+                mostrar_sucesso_geracao(save_path)
+                self.status_gerar.config(text=f"Documento salvo: {os.path.basename(save_path)}")
+                adicionar_ao_historico(m['path'], m['tipo'], save_path, len(dados_modelo))
+            except Exception as e:
+                log_erro(f"Erro ao gerar documento: {str(e)}")
+                messagebox.showerror("Erro", str(e))
             self.atualizar_tabela_historico()
             log_info(f"Documento gerado: {save_path}")
-
-        except Exception as e:
-            log_erro(f"Erro ao gerar documento: {str(e)}")
-            messagebox.showerror("Erro", str(e))
-
-    def _processar_em_lote(self):
-        if not self.dados_extraidos:
-            messagebox.showwarning("Aviso", "Extraia e edite os dados primeiro!")
-            return
-
-        messagebox.showinfo("Em Lote",
-                            "Selecione a pasta de modelos a processar.\n"
-                            "Cada modelo sera preenchido com os mesmos dados.")
-
-        pasta_modelos = filedialog.askdirectory(title="Selecione a pasta com modelos")
-        if not pasta_modelos:
             return
 
         pasta_saida = filedialog.askdirectory(title="Selecione a pasta de saida")
         if not pasta_saida:
             return
 
+        fontes_para_processar = self.lote_fontes if tem_lote_fontes else [None]
         processados = 0
-        erros_lote = []
+        erros = []
 
-        for arquivo in sorted(os.listdir(pasta_modelos)):
-            if not (arquivo.endswith('.odt') or arquivo.endswith('.docx')):
-                continue
+        for fonte_entry in fontes_para_processar:
+            if tem_lote_fontes:
+                dados_fonte = self._extrair_dados_da_fonte(fonte_entry)
+            else:
+                dados_fonte = self.dados_extraidos
 
-            caminho = os.path.join(pasta_modelos, arquivo)
-            ext = os.path.splitext(arquivo)[1].lower()
+            for m in modelos_para_gerar:
+                dados_modelo = {ph: dados_fonte.get(ph, "") for ph in m['placeholders']}
+                try:
+                    ext = os.path.splitext(m['path'])[1]
+                    nome_base = os.path.splitext(os.path.basename(m['path']))[0]
+                    if tem_lote_fontes:
+                        fonte_nome = os.path.splitext(os.path.basename(fonte_entry['documento_path']))[0]
+                        saida = os.path.join(pasta_saida, f"{nome_base}_{fonte_nome}{ext}")
+                    else:
+                        saida = os.path.join(pasta_saida, f"{nome_base}{ext}")
 
-            try:
-                saida = os.path.join(pasta_saida, f"preenchido_{arquivo}")
-
-                if ext == '.odt':
-                    gerar_odt_preenchido(caminho, self.dados_extraidos, saida)
-                elif ext == '.docx':
-                    if not docx_suportado():
-                        erros_lote.append(f"{arquivo}: DOCX nao suportado")
-                        continue
-                    gerar_docx_preenchido(caminho, self.dados_extraidos, saida)
-
-                processados += 1
-                adicionar_ao_historico(caminho, ext.replace('.', ''),
-                                       saida, len(self.dados_extraidos))
-            except Exception as e:
-                erros_lote.append(f"{arquivo}: {str(e)}")
+                    self._gerar_um_documento(m['path'], m['tipo'], dados_modelo, saida)
+                    processados += 1
+                    adicionar_ao_historico(m['path'], m['tipo'], saida,
+                                           len([v for v in dados_modelo.values() if v]))
+                except Exception as e:
+                    erros.append(f"{os.path.basename(m['path'])}: {str(e)}")
 
         self.atualizar_tabela_historico()
-        msg = f"Lote concluido!\n\nDocumentos processados: {processados}"
-        if erros_lote:
-            msg += f"\n\nErros:\n" + "\n".join(erros_lote)
-        messagebox.showinfo("Lote Finalizado", msg)
-        log_info(f"Processamento em lote: {processados} documentos")
+        msg = f"Geracao concluida!\n\nDocumentos processados: {processados}"
+        if erros:
+            msg += f"\n\nErros:\n" + "\n".join(erros)
+        messagebox.showinfo("Geracao Finalizada", msg)
+        self.status_gerar.config(text=f"{processados} documento(s) gerado(s)")
+        log_info(f"Geracao unificada: {processados} documentos")
+
+    def _gerar_um_documento(self, model_path, model_tipo, dados, output_path):
+        if model_tipo == 'odt':
+            gerar_odt_preenchido(model_path, dados, output_path)
+        elif model_tipo == 'docx':
+            if not docx_suportado():
+                raise Exception("DOCX nao suportado")
+            gerar_docx_preenchido(model_path, dados, output_path)
+        else:
+            raise Exception(f"Tipo de modelo desconhecido: {model_tipo}")
+
+    def _extrair_dados_da_fonte(self, entry):
+        doc_path = entry['documento_path']
+        dados = {}
+        for placeholder in self.placeholders:
+            if placeholder in entry['mapeamento']:
+                coords = entry['mapeamento'][placeholder]
+                try:
+                    if entry['documento_tipo'] == 'pdf':
+                        imagem = pdf_para_imagem(doc_path)
+                    elif entry['documento_tipo'] == 'heic':
+                        imagem = heic_para_imagem(doc_path)
+                    else:
+                        imagem = Image.open(doc_path)
+                    dados_ocr = {
+                        'x1': coords['x1'], 'y1': coords['y1'],
+                        'x2': coords['x2'], 'y2': coords['y2']
+                    }
+                    texto = extrair_texto_do_recorte(imagem, dados_ocr)
+                    dados[placeholder] = texto if texto else ""
+                except Exception:
+                    dados[placeholder] = ""
+            else:
+                dados[placeholder] = ""
+        return dados
+
+    def gerar_documento_preenchido(self):
+        self._gerar_documento_unificado()
+
+    def _processar_em_lote(self):
+        self._gerar_documento_unificado()
 
     def _processar_lote_fontes(self):
-        if not self.lote_fontes:
-            messagebox.showwarning("Aviso", "Nenhum documento mapeado no lote!\n"
-                                   "Na aba 'Anexar e Mapear', anexe varios documentos e mapeie os placeholders em cada um.")
-            return
-
-        if not self.modelo_path:
-            messagebox.showwarning("Aviso", "Carregue um modelo primeiro!")
-            return
-
-        pasta_saida = filedialog.askdirectory(title="Selecione a pasta de saida para os documentos em lote")
-        if not pasta_saida:
-            return
-
-        processados = 0
-        erros_lote = []
-
-        for entry in self.lote_fontes:
-            doc_path = entry['documento_path']
-            doc_nome = os.path.basename(doc_path)
-            dados_temp = {}
-
-            for placeholder in self.placeholders:
-                if placeholder in entry['mapeamento']:
-                    coords = entry['mapeamento'][placeholder]
-                    try:
-                        if entry['documento_tipo'] == 'pdf':
-                            imagem = pdf_para_imagem(doc_path)
-                        elif entry['documento_tipo'] == 'heic':
-                            imagem = heic_para_imagem(doc_path)
-                        else:
-                            imagem = Image.open(doc_path)
-
-                        dados_ocr = {
-                            'x1': coords['x1'],
-                            'y1': coords['y1'],
-                            'x2': coords['x2'],
-                            'y2': coords['y2']
-                        }
-                        texto = extrair_texto_do_recorte(imagem, dados_ocr)
-                        dados_temp[placeholder] = texto if texto else ""
-                    except Exception:
-                        dados_temp[placeholder] = ""
-                else:
-                    dados_temp[placeholder] = ""
-
-            try:
-                ext = os.path.splitext(self.modelo_path)[1].lower()
-                nome_base = os.path.splitext(doc_nome)[0]
-                saida = os.path.join(pasta_saida, f"preenchido_{nome_base}{ext}")
-
-                if ext == '.odt':
-                    gerar_odt_preenchido(self.modelo_path, dados_temp, saida)
-                elif ext == '.docx':
-                    if not docx_suportado():
-                        erros_lote.append(f"{doc_nome}: DOCX nao suportado")
-                        continue
-                    gerar_docx_preenchido(self.modelo_path, dados_temp, saida)
-                else:
-                    erros_lote.append(f"{doc_nome}: formato de modelo desconhecido")
-                    continue
-
-                processados += 1
-                adicionar_ao_historico(self.modelo_path, self.modelo_tipo,
-                                       saida, len([v for v in dados_temp.values() if v]))
-            except Exception as e:
-                erros_lote.append(f"{doc_nome}: {str(e)}")
-
-        self.atualizar_tabela_historico()
-        msg = f"Lote de documentos concluido!\n\nDocumentos processados: {processados}"
-        if erros_lote:
-            msg += f"\n\nErros:\n" + "\n".join(erros_lote)
-        messagebox.showinfo("Lote Finalizado", msg)
-        log_info(f"Processamento de lote de fontes: {processados} documentos")
+        self._gerar_documento_unificado()
 
     # ============================================================
     # ABA 5 - HISTORICO
@@ -1666,7 +1768,8 @@ class AppDocumentos:
                 'modelo_tipo': self.modelo_tipo,
                 'placeholders': self.placeholders,
                 'mapeamento': {},
-                'lote_fontes': self.lote_fontes
+                'lote_fontes': self.lote_fontes,
+                'modelos': self.modelos
             }
             for ph, dados in self.mapeamento.items():
                 backup['mapeamento'][ph] = {
@@ -1715,6 +1818,11 @@ class AppDocumentos:
                             'y2': dados['y2']
                         }
                     self.lote_fontes = backup.get('lote_fontes', [])
+                    self.modelos = backup.get('modelos', [])
+                    self.placeholders_por_modelo = {}
+                    for m in self.modelos:
+                        self.placeholders_por_modelo[m['path']] = set(m['placeholders'])
+                    self._atualizar_lista_modelos_carregados()
                     self.atualizar_lista_mapeamentos()
                     self.status_modelo.config(text="Mapeamento restaurado do backup.")
                     self.status_anexos.config(text="Mapeamento restaurado. Continue de onde parou.")
