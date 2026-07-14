@@ -57,6 +57,7 @@ class AppDocumentos:
         self.placeholders = []
         self.documentos_anexados = []
         self.mapeamento = {}
+        self.lote_fontes = []
         self.placeholder_atual = None
         self.documento_atual_path = None
         self.imagem_atual = None
@@ -588,6 +589,10 @@ class AppDocumentos:
                    command=self.limpar_mapeamento,
                    bootstyle="warning", padding=(15, 8)).pack(side=tk.LEFT, padx=5)
 
+        ttk.Button(btn_frame_left, text="🗑 Limpar Lote",
+                   command=self._limpar_lote_fontes,
+                   bootstyle="warning-outline", padding=(15, 8)).pack(side=tk.LEFT, padx=5)
+
         ttk.Button(btn_frame_left, text="❌ Remover Documento  [Del]",
                    command=self.remover_documento,
                    bootstyle="danger", padding=(15, 8)).pack(side=tk.LEFT, padx=5)
@@ -755,6 +760,7 @@ class AppDocumentos:
                     break
             if self.placeholder_atual:
                 self.carregar_imagem_para_mapeamento()
+            self._atualizar_status_documento_lote(nome_doc)
 
     def carregar_imagem_para_mapeamento(self):
         if not self.imagem_atual:
@@ -777,6 +783,19 @@ class AppDocumentos:
                 self.canvas.create_rectangle(x1, y1, x2, y2, outline='#28a745', width=2)
                 self.canvas.create_text(x1, y1-5, text=ph, fill='#28a745',
                                          anchor=tk.W, font=("Helvetica", 10, "bold"))
+
+        for entry in self.lote_fontes:
+            if entry['documento_path'] == self.documento_atual_path:
+                escala_x = self.imagem_exibida_img.width / self.imagem_atual.width
+                escala_y = self.imagem_exibida_img.height / self.imagem_atual.height
+                for ph, dados in entry['mapeamento'].items():
+                    x1 = dados['x1'] * escala_x + self.pan_offset_x
+                    y1 = dados['y1'] * escala_y + self.pan_offset_y
+                    x2 = dados['x2'] * escala_x + self.pan_offset_x
+                    y2 = dados['y2'] * escala_y + self.pan_offset_y
+                    self.canvas.create_rectangle(x1, y1, x2, y2, outline='#28a745', width=2)
+                    self.canvas.create_text(x1, y1-5, text=ph, fill='#28a745',
+                                             anchor=tk.W, font=("Helvetica", 10, "bold"))
 
     def anexar_documento(self):
         if not self.placeholders:
@@ -846,6 +865,8 @@ class AppDocumentos:
                     del self.mapeamento[ph]
                 break
 
+        self.lote_fontes = [e for e in self.lote_fontes if e['documento_path'] != caminho_remover]
+
         self.atualizar_lista_documentos()
         self.atualizar_lista_placeholders_aba2()
         self.atualizar_lista_mapeamentos()
@@ -887,6 +908,7 @@ class AppDocumentos:
                 self.retangulos_temp = [{
                     'placeholder': self.placeholder_atual,
                     'documento_path': self.documento_atual_path,
+                    'documento_tipo': self.documento_tipo,
                     'x1': int((x1 - self.pan_offset_x) * escala_x),
                     'y1': int((y1 - self.pan_offset_y) * escala_y),
                     'x2': int((x2 - self.pan_offset_x) * escala_x),
@@ -921,12 +943,14 @@ class AppDocumentos:
 
             self.mapeamento[ret['placeholder']] = {
                 'documento_path': ret['documento_path'],
-                'documento_tipo': self.documento_tipo,
+                'documento_tipo': ret['documento_tipo'],
                 'x1': ret['x1'],
                 'y1': ret['y1'],
                 'x2': ret['x2'],
                 'y2': ret['y2']
             }
+
+            self._sincronizar_lote_fontes(ret)
 
         self.retangulos_temp = []
         self.atualizar_lista_placeholders_aba2()
@@ -936,6 +960,27 @@ class AppDocumentos:
             self.carregar_imagem_para_mapeamento()
 
         self.status_anexos.config(text=f"Mapeado: {self.placeholder_atual}")
+
+    def _sincronizar_lote_fontes(self, ret):
+        doc_path = ret['documento_path']
+        mapping = {
+            'x1': ret['x1'],
+            'y1': ret['y1'],
+            'x2': ret['x2'],
+            'y2': ret['y2']
+        }
+        encontrado = False
+        for entry in self.lote_fontes:
+            if entry['documento_path'] == doc_path:
+                entry['mapeamento'][ret['placeholder']] = mapping
+                encontrado = True
+                break
+        if not encontrado:
+            self.lote_fontes.append({
+                'documento_path': doc_path,
+                'documento_tipo': ret['documento_tipo'],
+                'mapeamento': {ret['placeholder']: mapping}
+            })
 
     def atualizar_lista_mapeamentos(self):
         self.lista_mapeamentos.delete(0, tk.END)
@@ -947,16 +992,41 @@ class AppDocumentos:
         if pendentes:
             self.lista_mapeamentos.insert(tk.END, f"⚠ Pendentes: {', '.join(pendentes)}")
 
+        if self.lote_fontes:
+            self.lista_mapeamentos.insert(tk.END, "")
+            self.lista_mapeamentos.insert(tk.END, f"--- LOTE: {len(self.lote_fontes)} documento(s) ---")
+            for entry in self.lote_fontes:
+                nome = os.path.basename(entry['documento_path'])
+                mapeados = list(entry['mapeamento'].keys())
+                self.lista_mapeamentos.insert(tk.END, f"  📄 {nome}: {mapeados}")
+
+    def _atualizar_status_documento_lote(self, nome_doc):
+        for entry in self.lote_fontes:
+            if os.path.basename(entry['documento_path']) == nome_doc:
+                mapeados = len(entry['mapeamento'])
+                total = len(self.placeholders)
+                self.status_documento_sel.config(
+                    text=f"Documento: {nome_doc}  |  ({mapeados}/{total} placeholders)"
+                )
+                return
+
     def limpar_mapeamento(self):
         if messagebox.askyesno("Confirmar", "Limpar todo o mapeamento?"):
             self.mapeamento = {}
             self.undo_stack.clear()
             self.redo_stack.clear()
+            self.lote_fontes = []
             self.atualizar_lista_placeholders_aba2()
             self.atualizar_lista_mapeamentos()
             if self.documento_atual_path:
                 self.carregar_imagem_para_mapeamento()
             self.status_anexos.config(text="Mapeamento limpo")
+
+    def _limpar_lote_fontes(self):
+        if messagebox.askyesno("Confirmar", "Remover todos os mapeamentos do lote de documentos?"):
+            self.lote_fontes = []
+            self.atualizar_lista_mapeamentos()
+            self.status_anexos.config(text="Lote de fontes limpo")
 
     # ============================================================
     # UNDO / REDO
@@ -1058,7 +1128,8 @@ class AppDocumentos:
             'modelo_path': self.modelo_path,
             'modelo_tipo': self.modelo_tipo,
             'placeholders': self.placeholders,
-            'mapeamento': {}
+            'mapeamento': {},
+            'lote_fontes': self.lote_fontes
         }
         for ph, dados in self.mapeamento.items():
             export['mapeamento'][ph] = {
@@ -1106,6 +1177,8 @@ class AppDocumentos:
                     'x2': dados['x2'],
                     'y2': dados['y2']
                 }
+
+            self.lote_fontes = data.get('lote_fontes', [])
 
             self.undo_stack.clear()
             self.redo_stack.clear()
@@ -1160,9 +1233,13 @@ class AppDocumentos:
                    command=self.gerar_documento_preenchido,
                    bootstyle="success", padding=(25, 12)).pack(side=tk.LEFT, padx=10)
 
-        ttk.Button(frame_botoes_gerar, text="📚 Gerar em Lote",
+        ttk.Button(frame_botoes_gerar, text="📚 Gerar em Lote (Modelos)",
                    command=self._processar_em_lote,
                    bootstyle="warning", padding=(25, 12)).pack(side=tk.LEFT, padx=10)
+
+        ttk.Button(frame_botoes_gerar, text="📦 Gerar Lote de Documentos",
+                   command=self._processar_lote_fontes,
+                   bootstyle="primary", padding=(25, 12)).pack(side=tk.LEFT, padx=10)
 
         self.status_gerar = ttk.Label(frame, text="Aguardando extracao de dados...",
                                        bootstyle="secondary", anchor=tk.W,
@@ -1410,6 +1487,81 @@ class AppDocumentos:
         messagebox.showinfo("Lote Finalizado", msg)
         log_info(f"Processamento em lote: {processados} documentos")
 
+    def _processar_lote_fontes(self):
+        if not self.lote_fontes:
+            messagebox.showwarning("Aviso", "Nenhum documento mapeado no lote!\n"
+                                   "Na aba 'Anexar e Mapear', anexe varios documentos e mapeie os placeholders em cada um.")
+            return
+
+        if not self.modelo_path:
+            messagebox.showwarning("Aviso", "Carregue um modelo primeiro!")
+            return
+
+        pasta_saida = filedialog.askdirectory(title="Selecione a pasta de saida para os documentos em lote")
+        if not pasta_saida:
+            return
+
+        processados = 0
+        erros_lote = []
+
+        for entry in self.lote_fontes:
+            doc_path = entry['documento_path']
+            doc_nome = os.path.basename(doc_path)
+            dados_temp = {}
+
+            for placeholder in self.placeholders:
+                if placeholder in entry['mapeamento']:
+                    coords = entry['mapeamento'][placeholder]
+                    try:
+                        if entry['documento_tipo'] == 'pdf':
+                            imagem = pdf_para_imagem(doc_path)
+                        elif entry['documento_tipo'] == 'heic':
+                            imagem = heic_para_imagem(doc_path)
+                        else:
+                            imagem = Image.open(doc_path)
+
+                        dados_ocr = {
+                            'x1': coords['x1'],
+                            'y1': coords['y1'],
+                            'x2': coords['x2'],
+                            'y2': coords['y2']
+                        }
+                        texto = extrair_texto_do_recorte(imagem, dados_ocr)
+                        dados_temp[placeholder] = texto if texto else ""
+                    except Exception:
+                        dados_temp[placeholder] = ""
+                else:
+                    dados_temp[placeholder] = ""
+
+            try:
+                ext = os.path.splitext(self.modelo_path)[1].lower()
+                nome_base = os.path.splitext(doc_nome)[0]
+                saida = os.path.join(pasta_saida, f"preenchido_{nome_base}{ext}")
+
+                if ext == '.odt':
+                    gerar_odt_preenchido(self.modelo_path, dados_temp, saida)
+                elif ext == '.docx':
+                    if not docx_suportado():
+                        erros_lote.append(f"{doc_nome}: DOCX nao suportado")
+                        continue
+                    gerar_docx_preenchido(self.modelo_path, dados_temp, saida)
+                else:
+                    erros_lote.append(f"{doc_nome}: formato de modelo desconhecido")
+                    continue
+
+                processados += 1
+                adicionar_ao_historico(self.modelo_path, self.modelo_tipo,
+                                       saida, len([v for v in dados_temp.values() if v]))
+            except Exception as e:
+                erros_lote.append(f"{doc_nome}: {str(e)}")
+
+        self.atualizar_tabela_historico()
+        msg = f"Lote de documentos concluido!\n\nDocumentos processados: {processados}"
+        if erros_lote:
+            msg += f"\n\nErros:\n" + "\n".join(erros_lote)
+        messagebox.showinfo("Lote Finalizado", msg)
+        log_info(f"Processamento de lote de fontes: {processados} documentos")
+
     # ============================================================
     # ABA 5 - HISTORICO
     # ============================================================
@@ -1513,7 +1665,8 @@ class AppDocumentos:
                 'modelo_path': self.modelo_path,
                 'modelo_tipo': self.modelo_tipo,
                 'placeholders': self.placeholders,
-                'mapeamento': {}
+                'mapeamento': {},
+                'lote_fontes': self.lote_fontes
             }
             for ph, dados in self.mapeamento.items():
                 backup['mapeamento'][ph] = {
@@ -1561,6 +1714,7 @@ class AppDocumentos:
                             'x2': dados['x2'],
                             'y2': dados['y2']
                         }
+                    self.lote_fontes = backup.get('lote_fontes', [])
                     self.atualizar_lista_mapeamentos()
                     self.status_modelo.config(text="Mapeamento restaurado do backup.")
                     self.status_anexos.config(text="Mapeamento restaurado. Continue de onde parou.")
