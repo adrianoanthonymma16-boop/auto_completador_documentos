@@ -1,6 +1,6 @@
 # AutoDoc &middot; [English](#english)
 
-[![Version](https://img.shields.io/badge/version-3.8-blue)](https://github.com/adrianoanthonymma16-boop/autodoc)
+[![Version](https://img.shields.io/badge/version-3.9-blue)](https://github.com/adrianoanthonymma16-boop/autodoc)
 [![Python](https://img.shields.io/badge/python-3.8+-green)](https://www.python.org/)
 [![Platform](https://img.shields.io/badge/platform-Linux-orange)](https://ubuntu.com/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE.txt)
@@ -11,6 +11,9 @@ Automatize o preenchimento de documentos ODT/DOCX usando OCR com duas interfaces
 
 ## Funcionalidades
 
+- **Múltiplos Modelos** — Anexe vários modelos ODT/DOCX; placeholders iguais são unificados automaticamente
+- **Lote de Fontes** — Mapeie placeholders em vários documentos-fonte e gere uma saída por fonte
+- **Geração Unificada** — Um único botão gera para qualquer combinação (1/N modelos × 1/N fontes)
 - **Duas Interfaces** — Escolha entre ttkbootstrap (leve) ou CustomTkinter (visual moderno)
 - **Modelos ODT/DOCX** — Placeholders `{{nome}}`, `{{cpf}}`, `{{data}}`
 - **Preenchimento Manual** — Digite valores diretamente nos placeholders, sem precisar de OCR
@@ -25,7 +28,7 @@ Automatize o preenchimento de documentos ODT/DOCX usando OCR com duas interfaces
 - **Exportar/Importar Mapeamento** — Salve e carregue configurações em JSON
 - **Backup Automático** — Mapeamento salvo a cada 60 segundos — nunca perca seu trabalho
 - **Histórico de Geração** — Registro completo dos documentos gerados
-- **Processamento em Lote** — Preencha múltiplos documentos com os mesmos dados
+- **Processamento em Lote** — Preencha múltiplos documentos com os mesmos dados (via pasta de modelos)
 - **100% Offline** — Sem nuvem, sem internet, seus dados nunca saem da máquina
 
 ---
@@ -72,10 +75,10 @@ python3 run_ctk.py
 
 ### Fluxo de Trabalho
 
-1. **Modelo** — Carregue um ODT/DOCX com placeholders `{{...}}`
+1. **Modelo** — Carregue um ODT/DOCX com `{{...}}` e/ou anexe mais modelos ao lote
 2. **Modelos Salvos** — (opcional) Salve na biblioteca para reuso
-3. **Anexar e Mapear** — Anexe fotos/PDFs, desenhe retângulos nos campos
-4. **Gerar Documento** — Extraia via OCR, revise, gere o documento final
+3. **Anexar e Mapear** — Anexe fotos/PDFs, desenhe retângulos nos campos (compatível com lote de fontes)
+4. **Gerar Documento** — Extraia via OCR, revise, gere o(s) documento(s) final(is)
 5. **Histórico** — Consulte os documentos gerados anteriormente
 
 ---
@@ -86,7 +89,7 @@ python3 run_ctk.py
 |--------|------|
 | `Ctrl+O` | Carregar modelo |
 | `Ctrl+A` | Anexar documento |
-| `Ctrl+G` | Gerar documento preenchido |
+| `Ctrl+G` | Gerar documento |
 | `Ctrl+S` | Salvar mapeamento |
 | `Ctrl+Z` | Desfazer retângulo |
 | `Ctrl+E` | Exportar mapeamento |
@@ -177,7 +180,15 @@ autodoc/
 
 ## Versões
 
-### v3.8 (atual)
+### v3.9 (atual)
+- **Múltiplos modelos** — Botões "Anexar Individualmente" e "Anexar Vários" na aba Modelo
+- **Placeholders unificados** — Placeholders iguais entre modelos são mesclados automaticamente
+- **Lote de fontes** — Mapeie placeholders em vários documentos-fonte e gere uma saída por fonte
+- **Geração unificada** — Um único botão "Gerar Documento" cobre todos os cenários (1/N modelos × 1/N fontes)
+- **Bug fix** — `documento_tipo` agora armazenado por retângulo individual (corrige extração OCR com múltiplos tipos de documento)
+- **Persistência** — `modelos` e `lote_fontes` incluídos em backup/restore e export/import JSON
+
+### v3.8
 - **Interface CustomTkinter** — Nova GUI com visual moderno, scrollframes interativos e tema escuro/claro nativo
 - **Instalador duplo** — Instale e use ambas as interfaces lado a lado (ttkbootstrap + CustomTkinter)
 - **Preenchimento manual de placeholders** — Digite valores diretamente sem precisar de OCR ou documentos anexados
@@ -239,7 +250,7 @@ Software de código aberto sob a licença MIT. Veja o arquivo [LICENSE.txt](LICE
 
 # AutoDoc &middot; [Português](#autodoc)
 
-[![Version](https://img.shields.io/badge/version-3.8-blue)](https://github.com/adrianoanthonymma16-boop/autodoc)
+[![Version](https://img.shields.io/badge/version-3.9-blue)](https://github.com/adrianoanthonymma16-boop/autodoc)
 [![Python](https://img.shields.io/badge/python-3.8+-green)](https://www.python.org/)
 [![Platform](https://img.shields.io/badge/platform-Linux-orange)](https://ubuntu.com/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE.txt)
@@ -250,6 +261,9 @@ Automate ODT/DOCX document filling using OCR with two available interfaces: ttkb
 
 ## Features
 
+- **Multiple Templates** — Load several ODT/DOCX templates; identical placeholders are auto-merged
+- **Batch Sources** — Map placeholders across multiple source documents and generate one output per source
+- **Unified Generation** — Single button generates for any combination (1/N templates × 1/N sources)
 - **Dual Interface** — Choose between ttkbootstrap (lightweight) or CustomTkinter (modern look)
 - **ODT/DOCX Templates** — Placeholders `{{name}}`, `{{cpf}}`, `{{date}}`
 - **Manual Filling** — Type values directly into placeholders, no OCR needed
@@ -264,7 +278,7 @@ Automate ODT/DOCX document filling using OCR with two available interfaces: ttkb
 - **Export/Import Mapping** — Save and load configurations in JSON
 - **Automatic Backup** — Mapping saved every 60 seconds — never lose your work
 - **Generation History** — Complete log of generated documents
-- **Batch Processing** — Fill multiple documents with the same data
+- **Batch Processing** — Fill multiple documents with the same data (via template folder)
 - **100% Offline** — No cloud, no internet, your data never leaves the machine
 
 ---
@@ -311,10 +325,10 @@ python3 run_ctk.py
 
 ### Workflow
 
-1. **Template** — Load an ODT/DOCX with `{{...}}` placeholders
+1. **Template** — Load an ODT/DOCX with `{{...}}` and/or attach more templates to the batch
 2. **Saved Templates** — (optional) Save to library for reuse
-3. **Attach and Map** — Attach photos/PDFs, draw rectangles on fields
-4. **Generate Document** — Extract via OCR, review, generate the final document
+3. **Attach and Map** — Attach photos/PDFs, draw rectangles on fields (supports batch sources)
+4. **Generate Document** — Extract via OCR, review, generate the final document(s)
 5. **History** — Browse previously generated documents
 
 ---
@@ -405,7 +419,15 @@ autodoc/
 
 ## Versions
 
-### v3.8 (current)
+### v3.9 (current)
+- **Multiple templates** — "Attach Individually" and "Attach Multiple" buttons in the Template tab
+- **Unified placeholders** — Identical placeholders across templates are auto-merged
+- **Batch sources** — Map placeholders across multiple source documents, one output per source
+- **Unified generation** — Single "Generate Document" button covers all scenarios (1/N templates × 1/N sources)
+- **Bug fix** — `documento_tipo` now stored per-rectangle (fixes OCR extraction across different document types)
+- **Persistence** — `modelos` and `lote_fontes` included in backup/restore and JSON export/import
+
+### v3.8
 - **CustomTkinter Interface** — New GUI with modern look, interactive scrollframes and native dark/light theme
 - **Dual installer** — Install and use both interfaces side by side (ttkbootstrap + CustomTkinter)
 - **Manual placeholder filling** — Type values directly without OCR or attached documents
